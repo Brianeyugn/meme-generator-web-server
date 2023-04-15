@@ -1,3 +1,6 @@
+#ifndef GOOFYGOOGLERSSERVER_PARSER_H_
+#define GOOFYGOOGLERSSERVER_PARSER_H_
+
 // An nginx config file parser.
 
 #include <iostream>
@@ -57,3 +60,5 @@ class NginxConfigParser {
 
   TokenType ParseToken(std::istream* input, std::string* value);
 };
+
+#endif  // GOOFYGOOGLERSSERVER_PARSER_H_

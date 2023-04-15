@@ -36,9 +36,13 @@ include_directories(include)
 
 # TODO(!): Update name and srcs
 add_library(config_parser src/config_parser.cc)
+add_library(session src/session.cc)
+add_library(server_lib src/server.cc)
 
 # TODO(!): Update executable name, srcs, and deps
 add_executable(server src/server_main.cc)
+target_link_libraries(server_lib session)
+target_link_libraries(server server_lib)
 target_link_libraries(server Boost::system)
 target_link_libraries(server pthread) # Needed for building with Windows dev environments
 
