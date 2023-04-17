@@ -276,3 +276,34 @@ bool NginxConfigParser::Parse(const char* file_name, NginxConfig* config) {
   config_file.close();
   return return_value;
 }
+
+// Recursivly traverses config/statement structure in order to obtain port number.
+// Returns NginxConfig config's port from its configuration.
+// Returns -1 if port cannot be found.
+int NginxConfig::GetPort() {
+  // Find port within statements without child_block_
+  int port_value = -1;
+  for(auto cur_statement : this->statements_) {
+    if (cur_statement->child_block_.get() == nullptr) {
+      if (cur_statement->tokens_.size() == 2 && cur_statement->tokens_[0] == "listen") {
+        port_value = atoi(cur_statement->tokens_[1].c_str());
+        if (port_value < 0 || port_value > 65353) { // Validate port range.
+          return -1;
+        }
+        else {
+          return port_value;
+        }
+      }
+    }
+  }
+  // Find port within statements with child_block_
+  for(auto cur_statement : this->statements_) {
+    if (cur_statement->child_block_.get() != nullptr) {
+      port_value = cur_statement->child_block_->GetPort();
+      if (port_value != -1) {
+        return port_value;
+      }
+    }
+  }
+  return -1; // No valid port found.
+}

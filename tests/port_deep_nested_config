@@ -1,0 +1,10 @@
+http {
+  include    conf/mime.types;
+  include    /etc/nginx/proxy.conf;
+  server {
+    listen       8080;
+    server_name  domain1.com www.domain1.com;
+    access_log   logs/domain1.access.log  main;
+    root         html;
+  }
+}
