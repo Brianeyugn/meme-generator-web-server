@@ -9,6 +9,8 @@ WORKDIR /usr/src/project/build
 # Build and test
 RUN cmake ..
 RUN make
+RUN pwd
+RUN find . -name "server"
 RUN ctest --output-on_failure
 
 
@@ -18,6 +20,7 @@ FROM ubuntu:jammy as deploy
 
 # TODO(!): Copy server output binary to "."
 COPY --from=builder /usr/src/project/build/bin/server .
+COPY --from=builder /usr/src/project/configuration/docker_config .
 
 # TODO(!): Expose some port(s)
 EXPOSE 80
@@ -28,4 +31,4 @@ ENTRYPOINT ["./server"]
 
 # Use CMD to specify arguments to ENTRYPOINT
 # TODO(!): Update with real server args
-CMD [""]
+CMD ["docker_config"]
