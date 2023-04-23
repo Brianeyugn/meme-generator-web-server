@@ -51,11 +51,14 @@ target_link_libraries(server config_parser_lib)
 # add_executable(server_test.cc tests/example_lib_test.cc)
 # target_link_libraries(example_lib_test example_lib gtest_main)
 add_executable(config_parser_test tests/config_parser_test.cc)
+add_executable(config_statement_test tests/config_statement_test.cc)
 target_link_libraries(config_parser_test config_parser_lib gtest_main)
+target_link_libraries(config_statement_test config_parser_lib gtest_main)
 
 # TODO(!): Update with test binary
 # gtest_discover_tests(example_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(config_statement_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # TODO(!): Update with target/test targets
 # generate_coverage_report(TARGETS example_server example_lib TESTS example_lib_test)
