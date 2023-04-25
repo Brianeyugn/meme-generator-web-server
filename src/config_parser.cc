@@ -107,9 +107,6 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
             continue;
         }
       case TOKEN_STATE_SINGLE_QUOTE:
-
-
-
         *value += c;
         if (c == '\'') {
           // The end of a quoted token should be followed by whitespace.

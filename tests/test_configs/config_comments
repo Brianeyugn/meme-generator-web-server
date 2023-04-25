@@ -1,0 +1,9 @@
+# foo
+foo 'bar';
+
+# server
+server {
+  listen   80; #port
+  server_name foo.com;
+  root /home/ubuntu/sites/foo/;
+}

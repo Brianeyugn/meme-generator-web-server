@@ -120,3 +120,23 @@ TEST_F(NginxConfigParserTest, StatementWithMultipleTokens) {
   bool result = parser.Parse("test_configs/config_statement_with_multiple_tokens", &out_config);
   EXPECT_TRUE(result);
 }
+
+// Additional tests for higher code coverage.
+
+// Give the parser a filename that doesn't exist.
+TEST_F(NginxConfigParserTest, BadFile) {
+  bool result = parser.Parse("bad_file_name", &out_config);
+  EXPECT_FALSE(result);
+}
+
+// Test comments throughout the file.
+TEST_F(NginxConfigParserTest, FileWithComments) {
+   bool result = parser.Parse("test_configs/config_comments", &out_config);
+   EXPECT_TRUE(result);
+}
+
+// Test backslashes in strings.
+TEST_F(NginxConfigParserTest, StringWithBackslashes) {
+  bool result = parser.Parse("test_configs/config_backslashes", &out_config);
+  EXPECT_TRUE(result);
+}
