@@ -1,0 +1,7 @@
+foo "bar" baz;
+
+server {
+  listen   80 90 100 abcd;
+  server_name foo.com;
+  root /home/ubuntu/sites/foo/;
+}

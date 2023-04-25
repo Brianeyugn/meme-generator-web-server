@@ -12,28 +12,28 @@ class NginxConfigStatementTest : public ::testing::Test {
 // ToString() TESTS
 // Test for just newline if depth is zero with no tokens.
 TEST_F(NginxConfigStatementTest, NothingInStatement) {
-  bool success = configStatement.ToString(0) == ";\n";
-  EXPECT_TRUE(success);
+  bool result = configStatement.ToString(0) == ";\n";
+  EXPECT_TRUE(result);
 }
 
 // Test for whitespace for depth of 1 with no tokens.
 TEST_F(NginxConfigStatementTest, OneDepth) {
-  bool success = configStatement.ToString(1) == "  ;\n";
-  EXPECT_TRUE(success);
+  bool result = configStatement.ToString(1) == "  ;\n";
+  EXPECT_TRUE(result);
 }
 
 // Test for depth of 2 with 2 tokens.
 TEST_F(NginxConfigStatementTest, TwoTokens) {
   configStatement.tokens_.push_back("One");
   configStatement.tokens_.push_back("Two");
-  bool success = configStatement.ToString(2) == "    One Two;\n";
-  EXPECT_TRUE(success);
+  bool result = configStatement.ToString(2) == "    One Two;\n";
+  EXPECT_TRUE(result);
 }
 
 // Test for depth of 0 with 2 tokens.
 TEST_F(NginxConfigStatementTest, TwoTokensZeroDepth) {
   configStatement.tokens_.push_back("One");
   configStatement.tokens_.push_back("Two");
-  bool success = configStatement.ToString(0) == "One Two;\n";
-  EXPECT_TRUE(success);
+  bool result = configStatement.ToString(0) == "One Two;\n";
+  EXPECT_TRUE(result);
 }
