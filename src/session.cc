@@ -15,6 +15,10 @@ tcp::socket& session::socket() {
   return socket_;
 }
 
+char* session::getData() {
+  return data_;
+}
+
 void session::start() {
   socket_.async_read_some(boost::asio::buffer(data_, max_length),
       boost::bind(&session::handle_read, this,
@@ -25,14 +29,6 @@ void session::start() {
 void session::handle_read(const boost::system::error_code& error,
     size_t bytes_transferred) {
   if (!error) {
-    /*
-    std::cout << "HANDELING READ :P" << std::endl;
-    std::cout << "Sending copy of client output to server output" << std::endl;
-    std::cout.write(data_, bytes_transferred);
-    std::cout << "bytes_transferred: " << bytes_transferred << std::endl;
-    std::cout << std::endl;
-    */
-    
     bool is_complete_request = false; // Is the HTML request complete?
     std::string data_string(data_,bytes_transferred);
     if (bytes_transferred >= 2) { // data_ read is 2 or more characters long
@@ -58,7 +54,6 @@ void session::handle_read(const boost::system::error_code& error,
     }
     else
     {
-    // std::cout << "valid" << std::endl;
 
     std::string request = std::string(data_,bytes_transferred);
     std::istringstream iss(request);
