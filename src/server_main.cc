@@ -14,10 +14,12 @@
 
 #include "server.h"
 #include "config_parser.h"
+#include "logging.h"
 
 using boost::asio::ip::tcp;
 
 int main(int argc, char* argv[]) {
+  Logger *log = new Logger;
   try {
     if (argc != 2) {
       // The server should take a path to the config file on the command line such as:
@@ -25,6 +27,7 @@ int main(int argc, char* argv[]) {
       printf("Usage: ./server <path to config file>\n");
       return 1;
     }
+
     NginxConfigParser config_parser;
     NginxConfig config;
     config_parser.Parse(argv[1], &config);
@@ -36,13 +39,14 @@ int main(int argc, char* argv[]) {
     // For testing-- via commandline-- can also use:
     // server s(io_service, atoi(argv[1]));
     server s(io_service, server_port);
-    std::cout << "Server Running on Port: " << server_port << std::endl;
 
     io_service.run();
 
   } catch (std::exception& e) {
-    std::cerr << "Exception: " << e.what() << "\n";
+    BOOST_LOG_TRIVIAL(error) << "Exception: " << e.what();
   }
+
+  delete log;
 
   return 0;
 }

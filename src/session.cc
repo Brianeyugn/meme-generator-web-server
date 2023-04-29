@@ -9,12 +9,14 @@
 #include "request_handler.h"
 #include "echo_request_handler.h"
 #include "static_request_handler.h"
+#include "logging.h"
 
 using boost::asio::ip::tcp;
 using namespace std;
 
 session::session(boost::asio::io_service& io_service)
   : socket_(io_service) {
+  BOOST_LOG_TRIVIAL(info) << "Initialized session";
 }
 
 tcp::socket& session::socket() {
@@ -35,15 +37,16 @@ void session::start() { // Entryway into session-- session begins first read her
 void session::handle_read(const boost::system::error_code& error,
     size_t bytes_transferred) {
   if (!error) {
+    BOOST_LOG_TRIVIAL(debug) << "Handling read";
     bool request_found = false;
     string request_string;
 
-    // Add read to working read_string_buffer      
+    // Add read to working read_string_buffer
     this->read_string_buffer.append(string(data_, 0, bytes_transferred));
-    
+
     // Parse read_string_buffer for single Request
     int pos = this->read_string_buffer.find("\n\n");
-    if (pos != string::npos) { 
+    if (pos != string::npos) {
       request_string = this->read_string_buffer.substr(0, pos + 2);
       request_found = true;
       this->read_string_buffer.erase(0, request_string.length());
@@ -73,7 +76,7 @@ void session::handle_read(const boost::system::error_code& error,
       handlers.push_back(srh2);
 
       // (DEBUG) Dump client request to server console.
-      cout << request_string << endl;
+      BOOST_LOG_TRIVIAL(debug) << "Client requested: " << request_string;
 
       // Give request_string to handlers to produce response_string.
       string response_string = handle_request(request_string, handlers);
@@ -82,6 +85,7 @@ void session::handle_read(const boost::system::error_code& error,
       // cout << "8##" << response_string << "$$$" << endl;
 
       // Write back to client.
+      BOOST_LOG_TRIVIAL(debug) << "Writing back to client with IP: " << socket_.remote_endpoint().address().to_string();
       boost::asio::async_write(socket_,
         boost::asio::buffer(response_string),
         boost::bind(&session::handle_write, this,
@@ -98,17 +102,20 @@ void session::handle_read(const boost::system::error_code& error,
           boost::asio::placeholders::error));
     }
   } else {
+    BOOST_LOG_TRIVIAL(error) << "Read handler failed with error: " << error.value();
     delete this;
   }
 }
 
 void session::handle_write(const boost::system::error_code& error) {
   if (!error) {
+    BOOST_LOG_TRIVIAL(debug) << "Handling write";
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
       boost::bind(&session::handle_read, this,
         boost::asio::placeholders::error,
         boost::asio::placeholders::bytes_transferred));
   } else {
+    BOOST_LOG_TRIVIAL(error) << "Write handler failed with error: " << error.value();
     delete this;
   }
 }
@@ -117,6 +124,7 @@ void session::handle_write(const boost::system::error_code& error) {
 // Matches string with appropriate request handler.
 // Returns the response string.
 string session::handle_request(string request_string, vector<request_handler*> handlers) {
+  BOOST_LOG_TRIVIAL(debug) << "Handling request";
 	string response_string;
 
 	request_handler* rh = new request_handler("", ""); // Default request handler (Always returns 404 NOT FOUND).
@@ -126,6 +134,7 @@ string session::handle_request(string request_string, vector<request_handler*> h
 		handlers[i]->set_request_string_(request_string);
 		if (handlers[i]->is_matching_handler() == true)
 		{
+      BOOST_LOG_TRIVIAL(debug) << "Found matching handler";
 			found_matching_handler = true;
 			handlers[i]->parse_request(); // Polymorphic call to obtain response_string.
 			response_string = handlers[i]->get_response_string_();
@@ -133,6 +142,7 @@ string session::handle_request(string request_string, vector<request_handler*> h
 	}
 	if (found_matching_handler == false) // Let default handler handle if no matching handler found.
 	{
+    BOOST_LOG_TRIVIAL(debug) << "No matching handler found, using default";
 		rh->set_request_string_(request_string);
 		rh->parse_request();
 		response_string = rh->get_response_string_();
