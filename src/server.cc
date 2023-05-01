@@ -1,3 +1,4 @@
+#include <string>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 
@@ -12,10 +13,11 @@ server::server(boost::asio::io_service& io_service, short port)
   is_running_(false),
   active_sessions_(0),
   acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
-  BOOST_LOG_TRIVIAL(info) << "Server Running on Port: " << port;
+  Logger *log = Logger::get_logger();
+  log->log_info("Server running on port: " + std::to_string(port));
+
   start_accept();
 }
-
 
 void server::start_accept() {
   session* new_session = new session(io_service_);

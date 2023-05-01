@@ -10,6 +10,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <string>
 #include <boost/asio.hpp>
 
 #include "server.h"
@@ -19,12 +20,12 @@
 using boost::asio::ip::tcp;
 
 int main(int argc, char* argv[]) {
-  Logger *log = new Logger;
+  Logger *log = Logger::get_logger();
   try {
     if (argc != 2) {
       // The server should take a path to the config file on the command line such as:
       // bin/server starter_config
-      printf("Usage: ./server <path to config file>\n");
+      log->log_fatal("Invalid arguments. Usage: ./path/to/server path/to/config/file");
       return 1;
     }
 
@@ -43,10 +44,9 @@ int main(int argc, char* argv[]) {
     io_service.run();
 
   } catch (std::exception& e) {
-    BOOST_LOG_TRIVIAL(error) << "Exception: " << e.what();
+    std::string error = e.what();
+    log->log_error("Exception: " + error);
   }
-
-  delete log;
 
   return 0;
 }

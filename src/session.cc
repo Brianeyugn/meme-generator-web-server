@@ -16,7 +16,8 @@ using namespace std;
 
 session::session(boost::asio::io_service& io_service)
   : socket_(io_service) {
-  BOOST_LOG_TRIVIAL(info) << "Initialized session";
+  Logger *log = Logger::get_logger();
+  log->log_info("Initialized session");
 }
 
 tcp::socket& session::socket() {
@@ -36,8 +37,10 @@ void session::start() { // Entryway into session-- session begins first read her
 
 void session::handle_read(const boost::system::error_code& error,
     size_t bytes_transferred) {
+  Logger *log = Logger::get_logger();
+
   if (!error) {
-    BOOST_LOG_TRIVIAL(debug) << "Handling read";
+    log->log_debug("Handling read");
     bool request_found = false;
     string request_string;
 
@@ -76,7 +79,7 @@ void session::handle_read(const boost::system::error_code& error,
       handlers.push_back(srh2);
 
       // (DEBUG) Dump client request to server console.
-      BOOST_LOG_TRIVIAL(debug) << "Client requested: " << request_string;
+      log->log_debug("Client requested: " + request_string);
 
       // Give request_string to handlers to produce response_string.
       string response_string = handle_request(request_string, handlers);
@@ -85,7 +88,7 @@ void session::handle_read(const boost::system::error_code& error,
       // cout << "8##" << response_string << "$$$" << endl;
 
       // Write back to client.
-      BOOST_LOG_TRIVIAL(debug) << "Writing back to client with IP: " << socket_.remote_endpoint().address().to_string();
+      log->log_debug("Writing back to client with IP: " + socket_.remote_endpoint().address().to_string());
       boost::asio::async_write(socket_,
         boost::asio::buffer(response_string),
         boost::bind(&session::handle_write, this,
@@ -102,20 +105,22 @@ void session::handle_read(const boost::system::error_code& error,
           boost::asio::placeholders::error));
     }
   } else {
-    BOOST_LOG_TRIVIAL(error) << "Read handler failed with error: " << error.value();
+    log->log_error("Read handler failed with error code: " + std::to_string(error.value()));
     delete this;
   }
 }
 
 void session::handle_write(const boost::system::error_code& error) {
+  Logger *log = Logger::get_logger();
+
   if (!error) {
-    BOOST_LOG_TRIVIAL(debug) << "Handling write";
+    log->log_debug("Handling write");
     socket_.async_read_some(boost::asio::buffer(data_, max_length),
       boost::bind(&session::handle_read, this,
         boost::asio::placeholders::error,
         boost::asio::placeholders::bytes_transferred));
   } else {
-    BOOST_LOG_TRIVIAL(error) << "Write handler failed with error: " << error.value();
+    log->log_error("Write handler failed with error code: " + std::to_string(error.value()));
     delete this;
   }
 }
@@ -124,25 +129,24 @@ void session::handle_write(const boost::system::error_code& error) {
 // Matches string with appropriate request handler.
 // Returns the response string.
 string session::handle_request(string request_string, vector<request_handler*> handlers) {
-  BOOST_LOG_TRIVIAL(debug) << "Handling request";
-	string response_string;
+  Logger *log = Logger::get_logger();
+  log->log_debug("Handling request");
 
+	string response_string;
 	request_handler* rh = new request_handler("", ""); // Default request handler (Always returns 404 NOT FOUND).
 
 	bool found_matching_handler = false;
 	for (int i = 0; i < handlers.size(); i++) {
 		handlers[i]->set_request_string_(request_string);
-		if (handlers[i]->is_matching_handler() == true)
-		{
-      BOOST_LOG_TRIVIAL(debug) << "Found matching handler";
+		if (handlers[i]->is_matching_handler() == true) {
+      log->log_debug("Found matching handler");
 			found_matching_handler = true;
 			handlers[i]->parse_request(); // Polymorphic call to obtain response_string.
 			response_string = handlers[i]->get_response_string_();
 		}
 	}
-	if (found_matching_handler == false) // Let default handler handle if no matching handler found.
-	{
-    BOOST_LOG_TRIVIAL(debug) << "No matching handler found, using default";
+	if (found_matching_handler == false) { // Let default handler handle if no matching handler found.
+    log->log_debug("No matching handler found, using default");
 		rh->set_request_string_(request_string);
 		rh->parse_request();
 		response_string = rh->get_response_string_();
