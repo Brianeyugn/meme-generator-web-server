@@ -4,3 +4,11 @@ server {
   server_name foo.com;
   root /home/ubuntu/sites/foo/;
 }
+
+path /static StaticHandler {
+  root ./static_files/static_base_directory_1;
+}
+
+path /static2 StaticHandler {
+  root ./static_files/static_base_directory_2;
+}
