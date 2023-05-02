@@ -1,10 +1,12 @@
-#include <string>
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-
 #include "server.h"
-#include "session.h"
+
+#include <string>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+
 #include "logging.h"
+#include "session.h"
 
 using boost::asio::ip::tcp;
 

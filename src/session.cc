@@ -1,16 +1,17 @@
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-#include <iostream> // For Debugging
-#include <fstream>
-#include <cstring> // For strcpy
-#include <sstream> // For iostringstream
-#include <iostream>
-
 #include "session.h"
-#include "request_handler.h"
+
+#include <cstring>  // For strcpy
+#include <fstream>
+#include <iostream> // For Debugging
+#include <sstream>  // For iostringstream
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+
 #include "echo_request_handler.h"
-#include "static_request_handler.h"
 #include "logging.h"
+#include "request_handler.h"
+#include "static_request_handler.h"
 
 using boost::asio::ip::tcp;
 using namespace std;
@@ -160,6 +161,7 @@ string session::handle_request(string request_string, vector<request_handler*> h
 }
 
 void session::parse_config_file(const string& filename, vector<request_handler*>& handlers) {
+  Logger *log = Logger::get_logger();
   ifstream config_file(filename);
   string line;
 
@@ -179,7 +181,7 @@ void session::parse_config_file(const string& filename, vector<request_handler*>
       handlers.push_back(erh);
     } else {
       // Invalid handler type specified in config file.
-      BOOST_LOG_TRIVIAL(warning) << "Invalid handler type specified in config file: " << handler_type;
+      log->log_warn("Invalid handler type specified in config file: " + handler_type);
     }
   }
 }

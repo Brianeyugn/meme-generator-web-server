@@ -2,6 +2,7 @@
 #define GOOFYGOOGLERSSERVER_SESSION_H_
 
 #include <string>
+
 #include <boost/asio.hpp>
 
 #include "request_handler.h"

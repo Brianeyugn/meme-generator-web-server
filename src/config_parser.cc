@@ -7,6 +7,8 @@
 // How Nginx does it:
 //   http://lxr.nginx.org/source/src/core/ngx_conf_file.c
 
+#include "config_parser.h"
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -14,8 +16,6 @@
 #include <stack>
 #include <string>
 #include <vector>
-
-#include "config_parser.h"
 
 std::string NginxConfig::ToString(int depth) {
   std::string serialized_config;

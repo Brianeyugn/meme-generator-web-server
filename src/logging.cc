@@ -65,6 +65,10 @@ void Logger::log_info (std::string message) {
   BOOST_LOG_TRIVIAL(info) << message;
 }
 
+void Logger::log_warn (std::string message) {
+  BOOST_LOG_TRIVIAL(warning) << message;
+}
+
 void Logger::log_error(std::string message) {
   BOOST_LOG_TRIVIAL(error) << message;
 }

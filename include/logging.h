@@ -19,12 +19,13 @@ class Logger {
       Logger::logger_ = new Logger();
     }
 
-    return Logger::logger_; 
+    return Logger::logger_;
   }
 
   void log_trace(std::string message);
   void log_debug(std::string message);
   void log_info (std::string message);
+  void log_warn (std::string message);
   void log_error(std::string message);
   void log_fatal(std::string message);
 

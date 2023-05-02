@@ -1,8 +1,9 @@
-#include <fstream> // For ifstream.
+#include "static_request_handler.h"
+
 #include <filesystem>
+#include <fstream> // For ifstream.
 #include <iostream>
 #include <map>
-#include "static_request_handler.h"
 
 using namespace std;
 

@@ -11,11 +11,12 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+
 #include <boost/asio.hpp>
 
-#include "server.h"
 #include "config_parser.h"
 #include "logging.h"
+#include "server.h"
 
 using boost::asio::ip::tcp;
 
