@@ -23,7 +23,7 @@ COPY --from=builder /usr/src/project/build/bin/server .
 COPY --from=builder /usr/src/project/configuration/docker_config .
 
 # Copy static file content into deployment image
-COPY --from=builder /usr/src/project/data .
+COPY --from=builder /usr/src/project/static_files .
 
 # TODO(!): Expose some port(s)
 EXPOSE 80
