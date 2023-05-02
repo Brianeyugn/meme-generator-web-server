@@ -1,6 +1,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <iostream> // For Debugging
+#include <fstream>
 #include <cstring> // For strcpy
 #include <sstream> // For iostringstream
 #include <iostream>
