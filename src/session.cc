@@ -8,8 +8,8 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
-#include "echo_request_handler.h"
 #include "logging.h"
+#include "echo_request_handler.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
 

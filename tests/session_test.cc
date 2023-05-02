@@ -1,75 +1,66 @@
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include "session.h"
+#include <iostream>
 
 using boost::asio::ip::tcp;
 
-class SessionTest : public testing::Test {
+class SessionHandleReadTest : public testing::Test {
  protected:
-  SessionTest() : io_service_(), session_(io_service_), socket_(io_service_) {
+  SessionHandleReadTest() : io_service_(), session_(io_service_), socket_(io_service_) {
   }
 
-  virtual ~SessionTest() {
+  virtual ~SessionHandleReadTest() {
   }
 
   virtual void SetUp() {
+    // Setup handlers
+    erh1 = new echo_request_handler("", "echo");
+    string base_1 = "../static_files/static_base_directory_1";
+    string base_2 = "../static_files/static_base_directory_2";
+    srh1 = new static_request_handler("", "static1", base_1);
+    srh2 = new static_request_handler("", "static2", base_2);
+
+    // Feed handlers to handler vector.
+    handlers.push_back(erh1);
+    handlers.push_back(srh1);
+    handlers.push_back(srh2);
   }
 
   virtual void TearDown() {
+    // Clean up memory.
+    for (int i = 0; i < handlers.size(); i++) {
+      delete handlers[i];
+    }
   }
 
   boost::asio::io_service io_service_;
   session session_;
   tcp::socket socket_;
+
+  // Handlers
+  echo_request_handler* erh1;
+  static_request_handler* srh1;
+  static_request_handler* srh2;
+
+  vector<request_handler*> handlers;
 };
 
-TEST_F(SessionTest, TestHandleReadIncompleteRequest) {
-  // Incomplete request (ends with \n)
-  std::string incomplete_request = "GET /index.html HTTP/1.1\n";
-  std::strcpy(session_.getData(), incomplete_request.c_str());
-  boost::system::error_code ec;
-  size_t bytes_transferred = incomplete_request.size();
-  session_.handle_read(ec, bytes_transferred);
-
-  std::string expected_message = "Request not valid, please enter a compete HTML request!\r\n";
-  std::string actual_message(session_.getData(), expected_message.size());
-  EXPECT_EQ(expected_message, actual_message);
-}
-
-TEST_F(SessionTest, TestHandleReadValidRequest) {
-  // Valid request (ends with \r\n\r\n)
-  std::string valid_request = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nUpgrade-Insecure-Requests: 1\r\n\r\n";
-  std::strcpy(session_.getData(), valid_request.c_str());
-  boost::system::error_code ec;
-  size_t bytes_transferred = valid_request.size();
-  session_.handle_read(ec, bytes_transferred);
-
-  std::string expected_response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\n" + valid_request;
-  std::string actual_response(session_.getData(), expected_response.size());
+// Test for handle_request() of the case of a using a static handler
+TEST_F(SessionHandleReadTest, SessionHandlesReadRequestStatic) {
+  std::string request_string = "GET /static1/test.html HTTP/1.1";
+  std::string actual_response = session_.handle_request(request_string, handlers);
+  std::string expected_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 141\r\n\r\n<!DOCTYPE html>\n<html>\n<body style=\"background-color:powderblue;\">\n\n<h1>This is a heading</h1>\n<p>This is a paragraph.</p>\n\n</body>\n</html>\n\n";
   EXPECT_EQ(expected_response, actual_response);
 }
-/*
-TEST_F(SessionTest, TestHandleWrite) {
-  // Test handle_write() method
-  std::string message = "Request not valid, please enter a compete HTML request!\r\n";
-  std::strcpy(session_.getData(), message.c_str());
-  boost::system::error_code ec;
-  session_.handle_write(ec);
 
-  // Verify that the socket is ready to read
-  EXPECT_TRUE(socket_.is_open());
-  EXPECT_FALSE(socket_.async_read_some(boost::asio::buffer(session_.getData(), 1024),
-      std::bind(&session::handle_read, &session_,
-        boost::asio::placeholders::error,
-        boost::asio::placeholders::bytes_transferred)));
+// Test for handle_request() of the case of a using a default handler
+TEST_F(SessionHandleReadTest, SessionHandlesReadRequestNotFound) {
+  std::string request_string = "GET /not_available/test.html HTTP/1.1";
+  std::string actual_response = session_.handle_request(request_string, handlers);
+  std::string expected_response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this server.";
+  EXPECT_EQ(expected_response, actual_response);
 }
 
-TEST_F(SessionTest, TestStart) {
-  // Test start() method
-  boost::system::error_code ec;
-  session_.start();
-  // Verify that the socket is ready to read
-  EXPECT_TRUE(socket_.is_open());
-  EXPECT_FALSE(socket_.async_read_some(boost::asio::buffer(session_.data_, session_.max_length),
-      boost::bind(&session::handle_read, &session
-*/
+
+

@@ -6,6 +6,8 @@
 #include <boost/asio.hpp>
 
 #include "request_handler.h"
+#include "echo_request_handler.h"
+#include "static_request_handler.h"
 
 using boost::asio::ip::tcp;
 using namespace std;
