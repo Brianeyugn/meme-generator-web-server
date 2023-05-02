@@ -49,5 +49,7 @@ int main(int argc, char* argv[]) {
     log->log_error("Exception: " + error);
   }
 
+  delete log;
+
   return 0;
 }

@@ -20,7 +20,8 @@ Logger *Logger::logger_ = nullptr;
 Logger::Logger() {
   // Some Logger object already exists
   if (logger_ != nullptr) {
-    printf("Cannot instantiate new Logger object as one already exists");
+    fprintf(stderr, "Cannot instantiate new Logger object as one already exists");
+    exit(-1);
   }
 
   Logger *logger_ = this;
@@ -47,10 +48,7 @@ Logger::Logger() {
 }
 
 Logger::~Logger() {
-  if (Logger::logger_ != nullptr) {
-    delete logger_;
-    logger_ = nullptr;
-  }
+  logger_ = nullptr;
 }
 
 void Logger::log_trace(std::string message) {
