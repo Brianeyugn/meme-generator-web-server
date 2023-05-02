@@ -153,3 +153,28 @@ string session::handle_request(string request_string, vector<request_handler*> h
 
 	return response_string;
 }
+
+void session::parse_config_file(const string& filename, vector<request_handler*>& handlers) {
+  ifstream config_file(filename);
+  string line;
+
+  while (getline(config_file, line)) {
+    // Parse line to extract handler type, URL prefix, and directory path.
+    // For example: "static /static1 ../static_files/static_base_directory_1"
+    istringstream iss(line);
+    string handler_type, url_prefix, directory_path;
+    iss >> handler_type >> url_prefix >> directory_path;
+
+    // Create handler based on type.
+    if (handler_type == "static") {
+      static_request_handler* srh = new static_request_handler(url_prefix, "", directory_path);
+      handlers.push_back(srh);
+    } else if (handler_type == "echo") {
+      echo_request_handler* erh = new echo_request_handler(url_prefix, "");
+      handlers.push_back(erh);
+    } else {
+      // Invalid handler type specified in config file.
+      BOOST_LOG_TRIVIAL(warning) << "Invalid handler type specified in config file: " << handler_type;
+    }
+  }
+}

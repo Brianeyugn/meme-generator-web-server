@@ -19,6 +19,7 @@ public:
       size_t bytes_transferred);
   void handle_write(const boost::system::error_code& error);
   string handle_request(string request_string, vector<request_handler*> handlers);
+  void parse_config_file(const string& filename, vector<request_handler*>& handlers);
 
 private:
   tcp::socket socket_;
