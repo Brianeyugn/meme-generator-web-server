@@ -1,5 +1,7 @@
 #include "logging.h"
 
+#include <csignal>
+
 #include "gtest/gtest.h"
 
 class LoggingTest : public ::testing::Test {
@@ -30,6 +32,18 @@ TEST_F(LoggingTest, InstantiateSecondLogger) {
       Logger *log_2 = new Logger();
     },
     "Cannot instantiate new Logger object as one already exists"
+  );
+}
+
+TEST_F(LoggingTest, TestSigHandler) {
+  EXPECT_EXIT(
+    {
+      log = Logger::get_logger();
+      std::signal(SIGINT, log->signal_handler);
+      std::raise(SIGINT);
+    },
+    testing::ExitedWithCode(SIGINT),
+    ".*"
   );
 }
 

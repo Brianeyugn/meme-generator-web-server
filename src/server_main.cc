@@ -8,6 +8,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <csignal>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -30,20 +31,23 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
+    std::signal(SIGINT, log->signal_handler);
+    std::signal(SIGQUIT, log->signal_handler);
+    std::signal(SIGTERM, log->signal_handler);
+
     NginxConfigParser config_parser;
     NginxConfig config;
     config_parser.Parse(argv[1], &config);
     int server_port = config.GetPort();
 
     boost::asio::io_service io_service;
-
-    using namespace std; // For atoi.
+    
     // For testing-- via commandline-- can also use:
-    // server s(io_service, atoi(argv[1]));
+    // server s(io_service, std::atoi(argv[1]));
     server s(io_service, server_port);
-
     io_service.run();
 
+    log->log_info("Stopping server");
   } catch (std::exception& e) {
     std::string error = e.what();
     log->log_error("Exception: " + error);

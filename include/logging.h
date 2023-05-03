@@ -22,6 +22,11 @@ class Logger {
     return Logger::logger_;
   }
 
+  static void signal_handler(int signal) {
+    BOOST_LOG_TRIVIAL(fatal) << "Server interrupted with signal: " << signal;
+    exit(signal);
+  }
+
   void log_trace(std::string message);
   void log_debug(std::string message);
   void log_info (std::string message);
