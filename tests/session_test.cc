@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include "session.h"
+#include <fstream>
+#include <sstream>
 #include <iostream>
 
 using boost::asio::ip::tcp;
@@ -25,6 +27,18 @@ class SessionHandleReadTest : public testing::Test {
     handlers.push_back(erh1);
     handlers.push_back(srh1);
     handlers.push_back(srh2);
+
+    config_file_ = std::ofstream("config_test.txt");
+    config_file_ << "static /static1 ../static_files/static_base_directory_1\n";
+    config_file_ << "echo /echo1\n";
+    config_file_ << "invalid /invalid\n";
+    config_file_.close();
+    empty_file_ = std::ofstream("empty_file.txt");
+    empty_file_.close();
+    malconfig_file_ = std::ofstream("malconfig_test.txt");
+    malconfig_file_ << "static static2\n";
+    malconfig_file_ << "echo\n";
+    malconfig_file_.close();
   }
 
   virtual void TearDown() {
@@ -32,11 +46,20 @@ class SessionHandleReadTest : public testing::Test {
     for (int i = 0; i < handlers.size(); i++) {
       delete handlers[i];
     }
+    for (int i = 0; i < handler_2.size(); i++) {
+      delete handler_2[i];
+    }
+    std::remove("config_test.txt");
+    std::remove("empty_file.txt");
+    std::remove("malconfig_test.txt");
   }
 
   boost::asio::io_service io_service_;
   session session_;
   tcp::socket socket_;
+  std::ofstream config_file_;
+  std::ofstream empty_file_;
+  std::ofstream malconfig_file_;
 
   // Handlers
   echo_request_handler* erh1;
@@ -44,6 +67,7 @@ class SessionHandleReadTest : public testing::Test {
   static_request_handler* srh2;
 
   vector<request_handler*> handlers;
+  vector<request_handler*> handler_2;
 };
 
 // Test for handle_request() of the case of a using a static handler
@@ -62,5 +86,40 @@ TEST_F(SessionHandleReadTest, SessionHandlesReadRequestNotFound) {
   EXPECT_EQ(expected_response, actual_response);
 }
 
+// Tests for parse_config_file()
 
+TEST_F(SessionHandleReadTest, TestParseConfigFile) {
+    session_.parse_config_file("config_test.txt", handler_2);
 
+    EXPECT_EQ(handler_2.size(), 2);
+
+    static_request_handler* srh = dynamic_cast<static_request_handler*>(handler_2[0]);
+    EXPECT_NE(srh, nullptr);
+
+    echo_request_handler* erh = dynamic_cast<echo_request_handler*>(handler_2[1]);
+    EXPECT_NE(erh, nullptr);
+}
+
+TEST_F(SessionHandleReadTest, TestParseConfigFileEmptyFile) {
+    for (int i = 0; i < handler_2.size(); i++) {
+      delete handler_2[i];
+    }
+    session_.parse_config_file("empty_file.txt", handler_2);
+
+    EXPECT_EQ(handler_2.size(), 0);
+}
+
+TEST_F(SessionHandleReadTest, TestParseConfigFileNonexistentFile) {
+    session_.parse_config_file("nonexistent.txt", handler_2);
+
+    EXPECT_EQ(handler_2.size(), 0);
+}
+
+TEST_F(SessionHandleReadTest, TestParseConfigFileMalformedLine) {
+    for (int i = 0; i < handler_2.size(); i++) {
+        delete handler_2[i];
+      }
+    session_.parse_config_file("malconfig_test.txt", handler_2);
+
+    EXPECT_EQ(handler_2.size(), 2);
+}
