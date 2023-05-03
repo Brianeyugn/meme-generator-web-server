@@ -67,18 +67,11 @@ void session::handle_read(const boost::system::error_code& error,
     }
 
     if (request_found == true) {
-      // Setup handlers
-      echo_request_handler* erh1 = new echo_request_handler("", "echo");
-      string base_1 = "../static_files/static_base_directory_1";
-      string base_2 = "../static_files/static_base_directory_2";
-      static_request_handler* srh1 = new static_request_handler("", "static1", base_1);
-      static_request_handler* srh2 = new static_request_handler("", "static2", base_2);
-
+      
       // Feed handlers to handler vector.
       vector<request_handler*> handlers;
-      handlers.push_back(erh1);
-      handlers.push_back(srh1);
-      handlers.push_back(srh2);
+      // Parse config file and handle configs dynamically
+      parse_config_file("../configuration/handler_config", handlers);
 
       // (DEBUG) Dump client request to server console.
       log->log_debug("Client requested: " + request_string);
@@ -171,13 +164,16 @@ void session::parse_config_file(const string& filename, vector<request_handler*>
     istringstream iss(line);
     string handler_type, url_prefix, directory_path;
     iss >> handler_type >> url_prefix >> directory_path;
+    log->log_debug("handler type: " + handler_type);
+    log->log_debug("url prefix: " + url_prefix);
+    log->log_debug("directory path: " + directory_path);
 
     // Create handler based on type.
     if (handler_type == "static") {
-      static_request_handler* srh = new static_request_handler(url_prefix, "", directory_path);
+      static_request_handler* srh = new static_request_handler("", url_prefix, directory_path);
       handlers.push_back(srh);
     } else if (handler_type == "echo") {
-      echo_request_handler* erh = new echo_request_handler(url_prefix, "");
+      echo_request_handler* erh = new echo_request_handler("", url_prefix);
       handlers.push_back(erh);
     } else {
       // Invalid handler type specified in config file.
