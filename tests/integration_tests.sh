@@ -28,7 +28,7 @@ kill_server() {
 
 # Give server a valid HTTP/1.1 request and expect the same message echoed back
 test_echo() {
-  INPUT="GET /docs/index.html HTTP/1.1
+  INPUT="GET /static2/test.txt HTTP/1.1
 Host: www.nowhere123.com
 Accept: image/gif, image/jpeg, /
 Accept-Language: en-us
@@ -36,12 +36,17 @@ Accept-Encoding: gzip, deflate\r\n\r\n"
 
   EXPECTED_OUTPUT="HTTP/1.1 200 OK
 Content-Type: text/plain
+Content-Length: 778
 
-GET /docs/index.html HTTP/1.1
-Host: www.nowhere123.com
-Accept: image/gif, image/jpeg, /
-Accept-Language: en-us
-Accept-Encoding: gzip, deflate"
+She was dressed in rich materials--satins, and lace and silks -- all of white. Her shoes
+were white. And she had a long white veil dependent from her hair, and she had bridal flowers
+in her hair, but her hair was white. Some bright jewels sparkled on her neck and on her hands,
+and some other jewels lay sparkling on the table. Dresses, less splendid than the dress she
+wore, and half-packed trunks, were scattered about. She had not quite finished dressing, for
+she had but one shoe on -- the other was on the table near her hand -- her veil was but half
+arranged, her watch and chain were not put on, and some lace for her bosom lay with those
+trinkets, and with her handkerchief, and gloves, and some flowers, and a Prayer-book, all
+confusedly heaped about the looking-glass."
 
   echo -e "Sending:\n${INPUT}"
   echo "----------"
