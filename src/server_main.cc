@@ -22,18 +22,20 @@
 using boost::asio::ip::tcp;
 
 int main(int argc, char* argv[]) {
-  Logger *log = Logger::get_logger();
+  Logger *log = Logger::GetLogger();
   try {
     if (argc != 2) {
-      // The server should take a path to the config file on the command line such as:
-      // bin/server starter_config
-      log->log_fatal("Invalid arguments. Usage: ./path/to/server path/to/config/file");
+      // The Server should take a path to the config file on the command line such as:
+      // bin/Server starter_config
+      log->LogFatal(
+          "Invalid arguments. Usage: ./path/to/Server path/to/config/file");
+     
       return 1;
     }
 
-    std::signal(SIGINT, log->signal_handler);
-    std::signal(SIGQUIT, log->signal_handler);
-    std::signal(SIGTERM, log->signal_handler);
+    std::signal(SIGINT, log->SignalHandler);
+    std::signal(SIGQUIT, log->SignalHandler);
+    std::signal(SIGTERM, log->SignalHandler);
 
     NginxConfigParser config_parser;
     NginxConfig config;
@@ -43,14 +45,14 @@ int main(int argc, char* argv[]) {
     boost::asio::io_service io_service;
     
     // For testing-- via commandline-- can also use:
-    // server s(io_service, std::atoi(argv[1]));
-    server s(io_service, server_port);
+    // Server s(io_service, std::atoi(argv[1]));
+    Server s(io_service, server_port);
     io_service.run();
 
-    log->log_info("Stopping server");
+    log->LogInfo("Stopping Server");
   } catch (std::exception& e) {
     std::string error = e.what();
-    log->log_error("Exception: " + error);
+    log->LogError("Exception: " + error);
   }
 
   delete log;

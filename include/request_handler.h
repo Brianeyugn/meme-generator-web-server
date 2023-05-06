@@ -5,32 +5,32 @@
 
 using namespace std;
 
-/* request_handler Ussage Notes */
+/* RequestHandler Ussage Notes */
 // After constructing handler object.
-// Must set_request_string_() first.
-// Then can check is_matching_handler().
-// Or Then can also parse_request().
+// Must SetRequestString_() first.
+// Then can check IsMatchingHandler().
+// Or Then can also ParseRequest().
 
-class request_handler {
-public:
-  request_handler(string request_string, string handled_directory_name);
-  static string get_next_token(string str, string delimiter);
-  static string get_request_url(string request_string);
-  bool is_matching_handler();
-  virtual void parse_request();
+class RequestHandler {
+ public:
+  RequestHandler(string request_string, string handled_directory_name);
+  static string GetNextToken(string str, string delimiter);
+  static string GetRequestURL(string request_string);
+  bool IsMatchingHandler();
+  virtual void ParseRequest();
 
   // Getters.
-  string get_response_string_(); // Note: must parse_request() first, then get_response_string_().
-  string get_request_string_();
+  string GetResponseString_();
+  string GetRequestString_();
 
   // Setters.
-  void set_request_string_(string request_string);
-  void set_response_string_(string response_string);
-protected:
+  void SetRequestString(string request_string);
+  void SetResponseString(string response_string);
+ protected:
   string request_string_;
   string handled_directory_name_;
   string response_string_;
 
 };
 
-#endif // GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_
+#endif  // GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_

@@ -34,15 +34,13 @@ Logger::Logger() {
     keywords::format = LOG_FILE_FORMAT,
     keywords::rotation_size = 10 * 1024 * 1024, // Rotate after 10Mb
     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), // New log after midnight
-    keywords::auto_flush = true
-  );
+    keywords::auto_flush = true);
 
   // Output logs to console
   logging::add_console_log(
     std::cout,
     keywords::format = LOG_FILE_FORMAT,
-    keywords::auto_flush = true
-  );
+    keywords::auto_flush = true);
 
   logging::add_common_attributes();
 }
@@ -51,26 +49,32 @@ Logger::~Logger() {
   logger_ = nullptr;
 }
 
-void Logger::log_trace(std::string message) {
+// Use to query parameters in the code or interpret the algorithm’s steps
+void Logger::LogTrace(std::string message) {
   BOOST_LOG_TRIVIAL(trace) << message;
 }
 
-void Logger::log_debug(std::string message) {
+// Use when giving diagnostic information in a detailed manner
+void Logger::LogDebug(std::string message) {
   BOOST_LOG_TRIVIAL(debug) << message;
 }
 
-void Logger::log_info (std::string message) {
+// Use during expected situations
+void Logger::LogInfo(std::string message) {
   BOOST_LOG_TRIVIAL(info) << message;
 }
 
-void Logger::log_warn (std::string message) {
+// Use when there is an issue, but the code should continue to work as usual
+void Logger::LogWarn(std::string message) {
   BOOST_LOG_TRIVIAL(warning) << message;
 }
 
-void Logger::log_error(std::string message) {
+// Use when there is an inability to access a service or a file.
+void Logger::LogError(std::string message) {
   BOOST_LOG_TRIVIAL(error) << message;
 }
 
-void Logger::log_fatal(std::string message) {
+// Use when stoping a serious problem or corruption from happening
+void Logger::LogFatal(std::string message) {
   BOOST_LOG_TRIVIAL(fatal) << message;
 }

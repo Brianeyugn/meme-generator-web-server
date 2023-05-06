@@ -9,12 +9,16 @@
 
 namespace logging = boost::log;
 
+// Logger is a singleton that any class 
+// can easily access through the static GetLogger()
 class Logger {
  public:
   Logger();
   ~Logger();
 
-  static Logger* get_logger() {
+  static Logger* GetLogger() {
+    // If a singleton logger doesn't exist yet, create one. 
+    // Otherwise return the original
     if (Logger::logger_ == nullptr) {
       Logger::logger_ = new Logger();
     }
@@ -22,17 +26,17 @@ class Logger {
     return Logger::logger_;
   }
 
-  static void signal_handler(int signal) {
+  static void SignalHandler(int signal) {
     BOOST_LOG_TRIVIAL(fatal) << "Server interrupted with signal: " << signal;
     exit(signal);
   }
 
-  void log_trace(std::string message);
-  void log_debug(std::string message);
-  void log_info (std::string message);
-  void log_warn (std::string message);
-  void log_error(std::string message);
-  void log_fatal(std::string message);
+  void LogTrace(std::string message);
+  void LogDebug(std::string message);
+  void LogInfo (std::string message);
+  void LogWarn (std::string message);
+  void LogError(std::string message);
+  void LogFatal(std::string message);
 
  private:
   // static allows us to use the same Logger object across multiple files

@@ -7,17 +7,17 @@
 
 using boost::asio::ip::tcp;
 
-class server {
-public:
-  server(boost::asio::io_service& io_service, short port);
-  bool is_running() const;
-  int get_active_sessions() const;
-  void stop();
-  void start();
-  void handle_accept(session* new_session,
+class Server {
+ public:
+  Server(boost::asio::io_service& io_service, short port);
+  bool IsRunning() const;
+  int GetActiveSessions() const;
+  void Stop();
+  void Start();
+  void HandleAccept(Session* new_session,
       const boost::system::error_code& error);
-private:
-  void start_accept();
+ private:
+  void StartAccept();
   boost::asio::io_service& io_service_;
   tcp::acceptor acceptor_;
   bool is_running_;

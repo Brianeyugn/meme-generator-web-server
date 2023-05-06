@@ -7,20 +7,20 @@
 
 using namespace std;
 
-static_request_handler::static_request_handler(string request_string, string handled_directory_name, string base_directory_path)
-  :request_handler(request_string, handled_directory_name) {
+StaticRequestHandler::StaticRequestHandler(string request_string, string handled_directory_name, string base_directory_path)
+  :RequestHandler(request_string, handled_directory_name) {
   this->base_directory_path_ = base_directory_path;
 }
 
-// Helper function for parse_request().
-string static_request_handler::get_filename(string request_url) {
+// Helper function for ParseRequest().
+string StaticRequestHandler::GetFilename(string request_url) {
   int last_path_position = request_url.find_last_of("/");
   string request_filename = request_url.substr(last_path_position + 1);
   return request_filename;
 }
 
-// Helper function for parse_request().
-string static_request_handler::get_content_type(string extension) {
+// Helper function for ParseRequest().
+string StaticRequestHandler::GetContentType(string extension) {
   std::map <std::string, std::string> extension_to_content_type{
   {".html", "text/html"},
   {".htm", "text/html"},
@@ -36,13 +36,14 @@ string static_request_handler::get_content_type(string extension) {
   return content_type;
 }
 
-void static_request_handler::parse_request() {  // Overide parent parse_request();
+// Parse the static request and update the response string
+void StaticRequestHandler::ParseRequest() {  // Overide parent ParseRequest();
   // Static handler returns response depending on if file found.
 
-  string request_url = get_request_url(this->request_string_);
-  string request_filename = get_filename(request_url);
+  string request_url = GetRequestURL(this->request_string_);
+  string request_filename = GetFilename(request_url);
 
-  // Find requested file in server directory.
+  // Find requested file in Server directory.
   bool found_file = false;
   ifstream file;
 
@@ -73,7 +74,7 @@ void static_request_handler::parse_request() {  // Overide parent parse_request(
     // 200 OK CASE 
     response_status_code = "200 OK";
     std::string extension = filesystem::path(request_filename).extension().string();
-    response_content_type = get_content_type(extension);
+    response_content_type = GetContentType(extension);
 
     //Read file data for response
     file_contents = std::string((std::istreambuf_iterator<char>(file)),
@@ -83,8 +84,8 @@ void static_request_handler::parse_request() {  // Overide parent parse_request(
   else {
     // 404 NOT FOUND CASE
     response_status_code = "404 Not Found";
-    response_content_type = get_content_type(".txt");
-    file_contents = "404 Not Found. Error. The requested URL was not found on this server.";
+    response_content_type = GetContentType(".txt");
+    file_contents = "404 Not Found. Error. The requested URL was not found on this Server.";
     response_content_length = to_string(file_contents.size());
   }
 

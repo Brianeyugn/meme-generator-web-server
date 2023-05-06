@@ -1,10 +1,11 @@
 #include "echo_request_handler.h"
 
-echo_request_handler::echo_request_handler(string request_string, string handled_directory_name)
-	:request_handler(request_string, handled_directory_name) {
+EchoRequestHandler::EchoRequestHandler(string request_string, string handled_directory_name)
+	:RequestHandler(request_string, handled_directory_name) {
 }
 
-void echo_request_handler::parse_request(){  // Overide parent parse_request();
+// Parse the echo request and update the response string
+void EchoRequestHandler::ParseRequest(){  // Overide parent ParseRequest();
 	// Echo handler returns echo no matter what.
 	string response_status_code = "200 OK";
 	string response_content_type = "text/plain";

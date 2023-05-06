@@ -10,55 +10,61 @@
 
 using boost::asio::ip::tcp;
 
-server::server(boost::asio::io_service& io_service, short port)
+Server::Server(boost::asio::io_service& io_service, short port)
   : io_service_(io_service),
   is_running_(false),
   active_sessions_(0),
   acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {
-  Logger *log = Logger::get_logger();
-  log->log_info("Server running on port: " + std::to_string(port));
+  Logger *log = Logger::GetLogger();
+  log->LogInfo("Server running on port: " + std::to_string(port));
 
-  start_accept();
+  StartAccept();
 }
 
-void server::start_accept() {
-  session* new_session = new session(io_service_);
-  acceptor_.async_accept(new_session->socket(),
-    boost::bind(&server::handle_accept, this, new_session,
-      boost::asio::placeholders::error));
+// Start accepting requests to the Server
+void Server::StartAccept() {
+  Session* new_session = new Session(io_service_);
+  acceptor_.async_accept(new_session->Socket(),
+      boost::bind(&Server::HandleAccept, this, new_session,
+          boost::asio::placeholders::error));
 }
 
-bool server::is_running() const {
+// TODO: Unused
+bool Server::IsRunning() const {
   return is_running_;
 }
 
-void server::start() {
+// TODO: Unused
+void Server::Start() {
   if (!is_running_) {
     is_running_ = true;
-    start_accept();
+    StartAccept();
   }
 }
 
-void server::stop() {
+// TODO: Unused
+void Server::Stop() {
   if (is_running_) {
     is_running_ = false;
     acceptor_.cancel();
   }
 }
 
-int server::get_active_sessions() const {
+// TODO: Unused
+int Server::GetActiveSessions() const {
   return active_sessions_;
 }
 
-void server::handle_accept(session* new_session,
+// Start a new request Session
+void Server::HandleAccept(Session* new_session,
   const boost::system::error_code& error) {
   if (!error) {
-    new_session->start();
+    new_session->Start();
     active_sessions_++;
   } else {
     delete new_session;
   }
 
-  start_accept();
+  StartAccept();
   active_sessions_--;
 }

@@ -17,25 +17,30 @@
 #include <string>
 #include <vector>
 
+// Converts a config to string format, statement by statement
 std::string NginxConfig::ToString(int depth) {
   std::string serialized_config;
-  for (const auto& statement : statements_) {
+  for (const std::shared_ptr<NginxConfigStatement>& statement : statements_) {
     serialized_config.append(statement->ToString(depth));
   }
   return serialized_config;
 }
 
+// Converts a config statement to string format
 std::string NginxConfigStatement::ToString(int depth) {
   std::string serialized_statement;
+  // Spacing for child statements
   for (int i = 0; i < depth; ++i) {
     serialized_statement.append("  ");
   }
+  // Tokens in statement
   for (unsigned int i = 0; i < tokens_.size(); ++i) {
     if (i != 0) {
       serialized_statement.append(" ");
     }
     serialized_statement.append(tokens_[i]);
   }
+  // Handle child blocks
   if (child_block_.get() != nullptr) {
     serialized_statement.append(" {\n");
     serialized_statement.append(child_block_->ToString(depth + 1));
@@ -50,6 +55,7 @@ std::string NginxConfigStatement::ToString(int depth) {
   return serialized_statement;
 }
 
+// Converts a TokenType to a string
 const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
   switch (type) {
     case TOKEN_TYPE_START:         return "TOKEN_TYPE_START";
@@ -65,7 +71,7 @@ const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
 }
 
 NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
-                                                           std::string* value) {
+    std::string* value) {
   TokenParserState state = TOKEN_STATE_INITIAL_WHITESPACE;
   while (input->good()) {
     const char c = input->get();
@@ -176,6 +182,9 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
   return TOKEN_TYPE_EOF;
 }
 
+// Take a opened config file and store the
+// parsed config in the provided NginxConfig out-param.
+// Returns true iff the input config file is valid.
 bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   std::stack<NginxConfig*> config_stack;
   config_stack.push(config);
@@ -260,6 +269,10 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   return false;
 }
 
+
+// Take a config file name (respectively) and store the
+// parsed config in the provided NginxConfig out-param.  
+// Returns true iff the input config file is valid.
 bool NginxConfigParser::Parse(const char* file_name, NginxConfig* config) {
   std::ifstream config_file;
   config_file.open(file_name);
@@ -282,7 +295,8 @@ int NginxConfig::GetPort() {
   int port_value = -1;
   for(auto cur_statement : this->statements_) {
     if (cur_statement->child_block_.get() == nullptr) {
-      if (cur_statement->tokens_.size() == 2 && cur_statement->tokens_[0] == "listen") {
+      if (cur_statement->tokens_.size() == 2 && 
+          cur_statement->tokens_[0] == "listen") {
         port_value = atoi(cur_statement->tokens_[1].c_str());
         if (port_value < 0 || port_value > 65353) { // Validate port range.
           return -1;
@@ -293,6 +307,7 @@ int NginxConfig::GetPort() {
       }
     }
   }
+
   // Find port within statements with child_block_
   for(auto cur_statement : this->statements_) {
     if (cur_statement->child_block_.get() != nullptr) {
