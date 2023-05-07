@@ -33,6 +33,7 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
+    // Log various signals that could stop the server
     std::signal(SIGINT, log->SignalHandler);
     std::signal(SIGQUIT, log->SignalHandler);
     std::signal(SIGTERM, log->SignalHandler);

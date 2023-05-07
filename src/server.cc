@@ -24,7 +24,7 @@ Server::Server(boost::asio::io_service& io_service, short port)
 // Start accepting requests to the Server
 void Server::StartAccept() {
   Session* new_session = new Session(io_service_);
-  acceptor_.async_accept(new_session->Socket(),
+  acceptor_.async_accept(new_session->GetSocket(),
       boost::bind(&Server::HandleAccept, this, new_session,
           boost::asio::placeholders::error));
 }

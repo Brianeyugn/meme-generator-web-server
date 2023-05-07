@@ -7,8 +7,6 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/formatter_parser.hpp>
 
-namespace logging = boost::log;
-
 // Logger is a singleton that any class 
 // can easily access through the static GetLogger()
 class Logger {
@@ -16,20 +14,8 @@ class Logger {
   Logger();
   ~Logger();
 
-  static Logger* GetLogger() {
-    // If a singleton logger doesn't exist yet, create one. 
-    // Otherwise return the original
-    if (Logger::logger_ == nullptr) {
-      Logger::logger_ = new Logger();
-    }
-
-    return Logger::logger_;
-  }
-
-  static void SignalHandler(int signal) {
-    BOOST_LOG_TRIVIAL(fatal) << "Server interrupted with signal: " << signal;
-    exit(signal);
-  }
+  static Logger* GetLogger();
+  static void SignalHandler(int signal);
 
   void LogTrace(std::string message);
   void LogDebug(std::string message);
@@ -42,5 +28,35 @@ class Logger {
   // static allows us to use the same Logger object across multiple files
   static Logger *logger_;
 };
+
+// Use to query parameters in the code or interpret the algorithm’s steps
+inline void Logger::LogTrace(std::string message) {
+  BOOST_LOG_TRIVIAL(trace) << message;
+}
+
+// Use when giving diagnostic information in a detailed manner
+inline void Logger::LogDebug(std::string message) {
+  BOOST_LOG_TRIVIAL(debug) << message;
+}
+
+// Use during expected situations
+inline void Logger::LogInfo(std::string message) {
+  BOOST_LOG_TRIVIAL(info) << message;
+}
+
+// Use when there is an issue, but the code should continue to work as usual
+inline void Logger::LogWarn(std::string message) {
+  BOOST_LOG_TRIVIAL(warning) << message;
+}
+
+// Use when there is an inability to access a service or a file.
+inline void Logger::LogError(std::string message) {
+  BOOST_LOG_TRIVIAL(error) << message;
+}
+
+// Use when stoping a serious problem or corruption from happening
+inline void Logger::LogFatal(std::string message) {
+  BOOST_LOG_TRIVIAL(fatal) << message;
+}
 
 #endif  // GOOFYGOOGLERSSERVER_LOGGING_H_

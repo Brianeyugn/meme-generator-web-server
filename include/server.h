@@ -12,10 +12,13 @@ class Server {
   Server(boost::asio::io_service& io_service, short port);
   bool IsRunning() const;
   int GetActiveSessions() const;
+
   void Stop();
   void Start();
+
   void HandleAccept(Session* new_session,
       const boost::system::error_code& error);
+
  private:
   void StartAccept();
   boost::asio::io_service& io_service_;

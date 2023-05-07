@@ -49,32 +49,17 @@ Logger::~Logger() {
   logger_ = nullptr;
 }
 
-// Use to query parameters in the code or interpret the algorithm’s steps
-void Logger::LogTrace(std::string message) {
-  BOOST_LOG_TRIVIAL(trace) << message;
+Logger* Logger::GetLogger() {
+  // If a singleton logger doesn't exist yet, create one. 
+  // Otherwise return the original
+  if (Logger::logger_ == nullptr) {
+    Logger::logger_ = new Logger();
+  }
+
+  return Logger::logger_;
 }
 
-// Use when giving diagnostic information in a detailed manner
-void Logger::LogDebug(std::string message) {
-  BOOST_LOG_TRIVIAL(debug) << message;
-}
-
-// Use during expected situations
-void Logger::LogInfo(std::string message) {
-  BOOST_LOG_TRIVIAL(info) << message;
-}
-
-// Use when there is an issue, but the code should continue to work as usual
-void Logger::LogWarn(std::string message) {
-  BOOST_LOG_TRIVIAL(warning) << message;
-}
-
-// Use when there is an inability to access a service or a file.
-void Logger::LogError(std::string message) {
-  BOOST_LOG_TRIVIAL(error) << message;
-}
-
-// Use when stoping a serious problem or corruption from happening
-void Logger::LogFatal(std::string message) {
-  BOOST_LOG_TRIVIAL(fatal) << message;
+void Logger::SignalHandler(int signal) {
+  BOOST_LOG_TRIVIAL(fatal) << "Server interrupted with signal: " << signal;
+  exit(signal);
 }

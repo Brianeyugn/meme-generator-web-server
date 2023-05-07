@@ -3,8 +3,6 @@
 
 #include <string>
 
-using namespace std;
-
 /* RequestHandler Ussage Notes */
 // After constructing handler object.
 // Must SetRequestString_() first.
@@ -13,24 +11,43 @@ using namespace std;
 
 class RequestHandler {
  public:
-  RequestHandler(string request_string, string handled_directory_name);
-  static string GetNextToken(string str, string delimiter);
-  static string GetRequestURL(string request_string);
+  RequestHandler(std::string request_string, std::string handled_directory_name);
+
   bool IsMatchingHandler();
   virtual void ParseRequest();
 
+  static std::string GetNextToken(std::string str, std::string delimiter);
+  static std::string GetRequestURL(std::string request_string);
+
   // Getters.
-  string GetResponseString_();
-  string GetRequestString_();
+  std::string GetResponseString_();
+  std::string GetRequestString_();
 
   // Setters.
-  void SetRequestString(string request_string);
-  void SetResponseString(string response_string);
- protected:
-  string request_string_;
-  string handled_directory_name_;
-  string response_string_;
+  void SetRequestString(std::string request_string);
+  void SetResponseString(std::string response_string);
 
+ protected:
+  std::string request_string_;
+  std::string handled_directory_name_;
+  std::string response_string_;
 };
+
+// Must ParseRequest() first, then GetResponseString_().
+inline std::string RequestHandler::GetResponseString_() {
+  return this->response_string_;
+}
+
+inline std::string RequestHandler::GetRequestString_() {
+  return this->request_string_;
+}
+
+inline void RequestHandler::SetRequestString(std::string request_string) {
+  this->request_string_ = request_string;
+}
+
+inline void RequestHandler::SetResponseString(std::string response_string) {
+  this->response_string_ = response_string;
+}
 
 #endif  // GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_

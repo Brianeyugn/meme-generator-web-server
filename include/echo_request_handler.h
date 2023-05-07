@@ -3,11 +3,12 @@
 
 #include "request_handler.h"
 
+#include <string>
+
 class EchoRequestHandler : public RequestHandler {
  public:
-  EchoRequestHandler(string request_string, string handled_directory_name);
+  EchoRequestHandler(std::string request_string, std::string handled_directory_name);
   void ParseRequest() override;
- private:
 };
 
 #endif  // GOOFYGOOGLERSSERVER_ECHO_REQUEST_HANDLER_H_

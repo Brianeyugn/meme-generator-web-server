@@ -5,32 +5,41 @@
 
 #include <boost/asio.hpp>
 
-#include "request_handler.h"
 #include "echo_request_handler.h"
+#include "request_handler.h"
 #include "static_request_handler.h"
 
 using boost::asio::ip::tcp;
-using namespace std;
 
 class Session {
-public:
+ public:
   Session(boost::asio::io_service& io_service);
-  tcp::socket& Socket();
+
   void Start();
   char* GetData();
-  void HandleRead(const boost::system::error_code& error,
-      size_t bytes_transferred);
-  void HandleWrite(const boost::system::error_code& error);
-  string HandleRequest(string request_string, 
-      vector<RequestHandler*> handlers);
-  void ParseConfigFile(const string& filename, 
-      vector<RequestHandler*>& handlers);
+  tcp::socket& GetSocket();
 
-private:
-  tcp::socket socket_;
+  void HandleRead(const boost::system::error_code& error,
+      std::size_t bytes_transferred);
+  void HandleWrite(const boost::system::error_code& error);
+  std::string HandleRequest(std::string request_string, 
+      std::vector<RequestHandler*> handlers);
+  void ParseConfigFile(const std::string& filename, 
+      std::vector<RequestHandler*>& handlers);
+
+ private:
   enum { max_length = 1024 };
   char data_[max_length];
-  string read_string_buffer_;  // Accumulates all reads until a request is found.
+  std::string read_string_buffer_;  // Accumulates all reads until a request is found.
+  tcp::socket socket_;
 };
+
+inline char* Session::GetData() {
+  return data_;
+}
+
+inline tcp::socket& Session::GetSocket() {
+  return socket_;
+}
 
 #endif  // GOOFYGOOGLERSSERVER_
