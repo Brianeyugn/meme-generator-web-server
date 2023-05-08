@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
 #include "config_parser.h"
 
-class NginxConfigTest : public ::testing::Test {
+#include "gtest/gtest.h"
+
+class NginxConfigTestFixture : public ::testing::Test {
  protected:
   void SetUp() override {
       return;
@@ -10,13 +11,13 @@ class NginxConfigTest : public ::testing::Test {
 };
 
 // Test for empty string if there are no statements.
-TEST_F(NginxConfigTest, NothingInStatement) {
+TEST_F(NginxConfigTestFixture, NothingInStatement) {
   bool result = config.ToString(0) == "";
   EXPECT_TRUE(result);
 }
 
 // Test converting one token to a string.
-TEST_F(NginxConfigTest, SingleStatementToString) {
+TEST_F(NginxConfigTestFixture, SingleStatementToString) {
   std::shared_ptr<NginxConfigStatement> statement(new NginxConfigStatement);
   statement.get()->tokens_.push_back("string");
   statement.get()->child_block_ = nullptr;
@@ -26,7 +27,7 @@ TEST_F(NginxConfigTest, SingleStatementToString) {
 }
 
 // Test converting multiple tokens to a string.
-TEST_F(NginxConfigTest, MultipleStatementsToString) {
+TEST_F(NginxConfigTestFixture, MultipleStatementsToString) {
   std::shared_ptr<NginxConfigStatement> statement_1(new NginxConfigStatement), 
                                         statement_2(new NginxConfigStatement);
   statement_1.get()->tokens_.push_back("string_1");
@@ -41,13 +42,13 @@ TEST_F(NginxConfigTest, MultipleStatementsToString) {
 }
 
 // Test checking that an empty config has no port.
-TEST_F(NginxConfigTest, NoValidPortFound) {
+TEST_F(NginxConfigTestFixture, NoValidPortFound) {
   bool result = config.GetPort() == -1;
   EXPECT_TRUE(result);
 }
 
 // Test finding a port correctly.
-TEST_F(NginxConfigTest, ValidPortFound) {
+TEST_F(NginxConfigTestFixture, ValidPortFound) {
   std::shared_ptr<NginxConfigStatement> statement(new NginxConfigStatement);
   statement.get()->tokens_.push_back("listen");
   statement.get()->tokens_.push_back("8080");
@@ -57,7 +58,7 @@ TEST_F(NginxConfigTest, ValidPortFound) {
   EXPECT_TRUE(result);
 }
 // Test finding a port out of range.
-TEST_F(NginxConfigTest, PortOutOfRange) {
+TEST_F(NginxConfigTestFixture, PortOutOfRange) {
   std::shared_ptr<NginxConfigStatement> statement(new NginxConfigStatement);
   statement.get()->tokens_.push_back("listen");
   statement.get()->tokens_.push_back("100000");
@@ -68,7 +69,7 @@ TEST_F(NginxConfigTest, PortOutOfRange) {
 }
 
 // Test finding a port in a child block.
-TEST_F(NginxConfigTest, ChildPortFound) {
+TEST_F(NginxConfigTestFixture, ChildPortFound) {
   std::unique_ptr<NginxConfig> child_config(new NginxConfig);
   std::shared_ptr<NginxConfigStatement> statement(new NginxConfigStatement),
                                         child_statement(new NginxConfigStatement);

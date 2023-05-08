@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
 #include "config_parser.h"
 
-class NginxConfigStatementTest : public ::testing::Test {
+#include "gtest/gtest.h"
+
+class NginxConfigStatementTestFixture : public ::testing::Test {
   protected:
     void SetUp() override {
       return;
@@ -11,19 +12,19 @@ class NginxConfigStatementTest : public ::testing::Test {
 
 // ToString() TESTS
 // Test for just newline if depth is zero with no tokens.
-TEST_F(NginxConfigStatementTest, NothingInStatement) {
+TEST_F(NginxConfigStatementTestFixture, NothingInStatement) {
   bool result = config_statement.ToString(0) == ";\n";
   EXPECT_TRUE(result);
 }
 
 // Test for whitespace for depth of 1 with no tokens.
-TEST_F(NginxConfigStatementTest, OneDepth) {
+TEST_F(NginxConfigStatementTestFixture, OneDepth) {
   bool result = config_statement.ToString(1) == "  ;\n";
   EXPECT_TRUE(result);
 }
 
 // Test for depth of 2 with 2 tokens.
-TEST_F(NginxConfigStatementTest, TwoTokens) {
+TEST_F(NginxConfigStatementTestFixture, TwoTokens) {
   config_statement.tokens_.push_back("One");
   config_statement.tokens_.push_back("Two");
   bool result = config_statement.ToString(2) == "    One Two;\n";
@@ -31,7 +32,7 @@ TEST_F(NginxConfigStatementTest, TwoTokens) {
 }
 
 // Test for depth of 0 with 2 tokens.
-TEST_F(NginxConfigStatementTest, TwoTokensZeroDepth) {
+TEST_F(NginxConfigStatementTestFixture, TwoTokensZeroDepth) {
   config_statement.tokens_.push_back("One");
   config_statement.tokens_.push_back("Two");
   bool result = config_statement.ToString(0) == "One Two;\n";
@@ -39,7 +40,7 @@ TEST_F(NginxConfigStatementTest, TwoTokensZeroDepth) {
 }
 
 // Test child block.
-TEST_F(NginxConfigStatementTest, ChildBlock) {
+TEST_F(NginxConfigStatementTestFixture, ChildBlock) {
   std::unique_ptr<NginxConfig> child_config(new NginxConfig);
   std::shared_ptr<NginxConfigStatement> child_statement(new NginxConfigStatement);
   child_statement.get()->tokens_.push_back("Two");

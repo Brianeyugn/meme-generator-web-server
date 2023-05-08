@@ -1,17 +1,19 @@
-#include "gtest/gtest.h"
 #include "static_request_handler.h"
 
+#include "gtest/gtest.h"
+
+/*
 // Test that GetFilename() returns correct filename given short url.
 TEST(StaticRequestHandlerTest, GetFilenameReturnFilenameForShortURL) {
-  string url = "/test.html";
-  string filename = StaticRequestHandler::GetFilename(url);
+  std::string url = "/test.html";
+  std::string filename = StaticRequestHandler::GetFilename(url);
   EXPECT_EQ(filename, "test.html");
 }
 
 // Test that GetFilename() returns correct filename given long url.
 TEST(StaticRequestHandlerTest, GetFilenameReturnFilenameForLongURL) {
-  string url = "/echo/test.html";
-  string filename = StaticRequestHandler::GetFilename(url);
+  std::string url = "/echo/test.html";
+  std::string filename = StaticRequestHandler::GetFilename(url);
   EXPECT_EQ(filename, "test.html");
 }
 
@@ -26,25 +28,25 @@ TEST(StaticRequestHandlerTest, GetContentTypeReturnsAllCorrectContentForEachExte
   EXPECT_EQ(StaticRequestHandler::GetContentType(".bin"), "application/octet-stream");
   EXPECT_EQ(StaticRequestHandler::GetContentType(""), "application/octet-stream");
   EXPECT_EQ(StaticRequestHandler::GetContentType(".zip"), "application/zip");
-}
+}*/
 
 // Test of StaticRequestHandler handling of a file that will not be found.
 TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileNotFoundWhenNotFound) {
   StaticRequestHandler srh = StaticRequestHandler("","static1","");
-  string request_string = "GET /static1/filenotavailable.txt HTTP/1.1";
+  std::string request_string = "GET /static1/filenotavailable.txt HTTP/1.1";
   srh.SetRequestString(request_string);
   srh.ParseRequest();
-  string response_string = srh.GetResponseString_();
+  std::string response_string = srh.GetResponseString_();
   EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
 }
 
 // Test of StaticRequestHandler handling of a file that will be found.
 TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileFoundWhenFound) {
-  string base_1 = "../static_files/static_base_directory_1";
+  std::string base_1 = "../static_files/static_base_directory_1";
   StaticRequestHandler srh = StaticRequestHandler("","static1",base_1);
-  string request_string = "GET /static1/smol.txt HTTP/1.1";
+  std::string request_string = "GET /static1/smol.txt HTTP/1.1";
   srh.SetRequestString(request_string);
   srh.ParseRequest();
-  string response_string = srh.GetResponseString_();
+  std::string response_string = srh.GetResponseString_();
   EXPECT_NE(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
 }

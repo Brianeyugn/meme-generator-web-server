@@ -1,5 +1,8 @@
-#include "gtest/gtest.h"
 #include "request_handler.h"
+
+#include <string>
+
+#include "gtest/gtest.h"
 
 // Test set and get of request_string_for correctness.
 TEST(RequestHandlerTest, SetGetRequestString) {
@@ -17,16 +20,16 @@ TEST(RequestHandlerTest, SetGetResponseString) {
 
 // Test static function GetNextToken for retrieval of consequtivly "/" delimited characters
 TEST(RequestHandlerTest, GetNextTokenInStringPath) {
-  string path_string = "this/is/a/fake/path";
-  string delimiter = "/";
+  std::string path_string = "this/is/a/fake/path";
+  std::string delimiter = "/";
 
-  string token_1 = RequestHandler::GetNextToken(path_string, delimiter);
+  std::string token_1 = RequestHandler::GetNextToken(path_string, delimiter);
   path_string.erase(0, token_1.size() + 1);
-  string token_2 = RequestHandler::GetNextToken(path_string, delimiter);
+  std::string token_2 = RequestHandler::GetNextToken(path_string, delimiter);
   path_string.erase(0, token_2.size() + 1);
-  string token_3 = RequestHandler::GetNextToken(path_string, delimiter);
+  std::string token_3 = RequestHandler::GetNextToken(path_string, delimiter);
   path_string.erase(0, token_3.size() + 1);
-  string token_4 = RequestHandler::GetNextToken(path_string, delimiter);
+  std::string token_4 = RequestHandler::GetNextToken(path_string, delimiter);
 
   EXPECT_EQ(token_1, "this");
   EXPECT_EQ(token_2, "is");
@@ -36,16 +39,16 @@ TEST(RequestHandlerTest, GetNextTokenInStringPath) {
 
 // Test static function GetRequestURL
 TEST(RequestHandlerTest, GetRequestURLFromRequstLine) {
-  string http_request_line = "GET /static1/test.html HTTP/1.1";
-  string request_url = RequestHandler::GetRequestURL(http_request_line);
+  std::string http_request_line = "GET /static1/test.html HTTP/1.1";
+  std::string request_url = RequestHandler::GetRequestURL(http_request_line);
   EXPECT_EQ(request_url, "/static1/test.html");
 }
 
 class RequstHandlerFixture : public ::testing::Test {
-  protected:
-    void SetUp() override {
-      return;
-    }
+ protected:
+  void SetUp() override {
+    return;
+  }
   RequestHandler rh = RequestHandler("","static1");
 };
 
@@ -67,6 +70,6 @@ TEST_F(RequstHandlerFixture, MatchingRequestDoesMatch) {
 TEST_F(RequstHandlerFixture, RequestHandlerParseRequestReturnNotFound) {
   rh.SetRequestString("GET /static1/test.html HTTP/1.1");
   rh.ParseRequest();
-  string response_string = rh.GetResponseString_();
+  std::string response_string = rh.GetResponseString_();
   EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
 }

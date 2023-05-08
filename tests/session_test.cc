@@ -1,25 +1,24 @@
-#include <gtest/gtest.h>
-#include <boost/asio.hpp>
 #include "session.h"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
 
+#include <boost/asio.hpp>
+#include <gtest/gtest.h>
+
 using boost::asio::ip::tcp;
-
-class SessionHandleReadTest : public testing::Test {
+class SessionHandleReadTestFixture : public testing::Test {
  protected:
-  SessionHandleReadTest() : io_service_(), session_(io_service_), socket_(io_service_) {
-  }
+  SessionHandleReadTestFixture() : io_service_(), session_(io_service_), socket_(io_service_) {}
 
-  virtual ~SessionHandleReadTest() {
-  }
+  virtual ~SessionHandleReadTestFixture() {}
 
   virtual void SetUp() {
     // Setup handlers
     erh1 = new EchoRequestHandler("", "echo");
-    string base_1 = "../static_files/static_base_directory_1";
-    string base_2 = "../static_files/static_base_directory_2";
+    std::string base_1 = "../static_files/static_base_directory_1";
+    std::string base_2 = "../static_files/static_base_directory_2";
     srh1 = new StaticRequestHandler("", "static1", base_1);
     srh2 = new StaticRequestHandler("", "static2", base_2);
 
@@ -49,6 +48,7 @@ class SessionHandleReadTest : public testing::Test {
     for (int i = 0; i < handler_2.size(); i++) {
       delete handler_2[i];
     }
+
     std::remove("config_test.txt");
     std::remove("empty_file.txt");
     std::remove("malconfig_test.txt");
@@ -66,12 +66,12 @@ class SessionHandleReadTest : public testing::Test {
   StaticRequestHandler* srh1;
   StaticRequestHandler* srh2;
 
-  vector<RequestHandler*> handlers;
-  vector<RequestHandler*> handler_2;
+  std::vector<RequestHandler*> handlers;
+  std::vector<RequestHandler*> handler_2;
 };
 
 // Test for HandleRequest() of the case of a using a static handler
-TEST_F(SessionHandleReadTest, SessionHandlesReadRequestStatic) {
+TEST_F(SessionHandleReadTestFixture, SessionHandlesReadRequestStatic) {
   std::string request_string = "GET /static1/test.html HTTP/1.1";
   std::string actual_response = session_.HandleRequest(request_string, handlers);
   std::string expected_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 141\r\n\r\n<!DOCTYPE html>\n<html>\n<body style=\"background-color:powderblue;\">\n\n<h1>This is a heading</h1>\n<p>This is a paragraph.</p>\n\n</body>\n</html>\n\n";
@@ -79,7 +79,7 @@ TEST_F(SessionHandleReadTest, SessionHandlesReadRequestStatic) {
 }
 
 // Test for HandleRequest() of the case of a using a default handler
-TEST_F(SessionHandleReadTest, SessionHandlesReadRequestNotFound) {
+TEST_F(SessionHandleReadTestFixture, SessionHandlesReadRequestNotFound) {
   std::string request_string = "GET /not_available/test.html HTTP/1.1";
   std::string actual_response = session_.HandleRequest(request_string, handlers);
   std::string expected_response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.";
@@ -88,7 +88,7 @@ TEST_F(SessionHandleReadTest, SessionHandlesReadRequestNotFound) {
 
 // Tests for ParseConfigFile()
 
-TEST_F(SessionHandleReadTest, TestParseConfigFile) {
+TEST_F(SessionHandleReadTestFixture, TestParseConfigFile) {
     session_.ParseConfigFile("config_test.txt", handler_2);
 
     EXPECT_EQ(handler_2.size(), 2);
@@ -100,7 +100,7 @@ TEST_F(SessionHandleReadTest, TestParseConfigFile) {
     EXPECT_NE(erh, nullptr);
 }
 
-TEST_F(SessionHandleReadTest, TestParseConfigFileEmptyFile) {
+TEST_F(SessionHandleReadTestFixture, TestParseConfigFileEmptyFile) {
     for (int i = 0; i < handler_2.size(); i++) {
       delete handler_2[i];
     }
@@ -109,13 +109,13 @@ TEST_F(SessionHandleReadTest, TestParseConfigFileEmptyFile) {
     EXPECT_EQ(handler_2.size(), 0);
 }
 
-TEST_F(SessionHandleReadTest, TestParseConfigFileNonexistentFile) {
+TEST_F(SessionHandleReadTestFixture, TestParseConfigFileNonexistentFile) {
     session_.ParseConfigFile("nonexistent.txt", handler_2);
 
     EXPECT_EQ(handler_2.size(), 0);
 }
 
-TEST_F(SessionHandleReadTest, TestParseConfigFileMalformedLine) {
+TEST_F(SessionHandleReadTestFixture, TestParseConfigFileMalformedLine) {
     for (int i = 0; i < handler_2.size(); i++) {
         delete handler_2[i];
       }

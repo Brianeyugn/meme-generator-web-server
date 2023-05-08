@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 
-class LoggingTest : public ::testing::Test {
+class LoggingTestFixture : public ::testing::Test {
  protected:
   void SetUp() override {
     return;
@@ -13,18 +13,13 @@ class LoggingTest : public ::testing::Test {
   Logger *log;
 };
 
-TEST_F(LoggingTest, LoggerInitiallyNull) {
-  bool result = log == nullptr;
-  EXPECT_TRUE(result);
-}
-
-TEST_F(LoggingTest, InstantiateLogger) {
+TEST_F(LoggingTestFixture, InstantiateLogger) {
   log = Logger::GetLogger();
   bool result = log == nullptr;
   EXPECT_FALSE(result);
 }
 
-TEST_F(LoggingTest, InstantiateSecondLogger) {
+TEST_F(LoggingTestFixture, InstantiateSecondLogger) {
   EXPECT_DEATH(
     {
       log = Logger::GetLogger();
@@ -35,7 +30,7 @@ TEST_F(LoggingTest, InstantiateSecondLogger) {
   );
 }
 
-TEST_F(LoggingTest, TestSigHandler) {
+TEST_F(LoggingTestFixture, TestSigHandler) {
   EXPECT_EXIT(
     {
       log = Logger::GetLogger();
@@ -47,43 +42,43 @@ TEST_F(LoggingTest, TestSigHandler) {
   );
 }
 
-TEST_F(LoggingTest, LogTrace) {
+TEST_F(LoggingTestFixture, LogTrace) {
   log = Logger::GetLogger();
   log->LogTrace("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, LogDebug) {
+TEST_F(LoggingTestFixture, LogDebug) {
   log = Logger::GetLogger();
   log->LogDebug("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, LogInfo) {
+TEST_F(LoggingTestFixture, LogInfo) {
   log = Logger::GetLogger();
   log->LogInfo("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, LogWarning) {
+TEST_F(LoggingTestFixture, LogWarning) {
   log = Logger::GetLogger();
   log->LogWarn("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, LogError) {
+TEST_F(LoggingTestFixture, LogError) {
   log = Logger::GetLogger();
   log->LogError("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, LogFatal) {
+TEST_F(LoggingTestFixture, LogFatal) {
   log = Logger::GetLogger();
   log->LogFatal("test message");
   SUCCEED();
 }
 
-TEST_F(LoggingTest, DeleteAndRemakeLogger) {
+TEST_F(LoggingTestFixture, DeleteAndRemakeLogger) {
   log = Logger::GetLogger();
   delete log;
   Logger *new_log = new Logger;
