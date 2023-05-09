@@ -9,11 +9,12 @@ class ServerTestFixture : public ::testing::Test {
  protected:
   boost::asio::io_service io_service;
   std::unique_ptr<Server> server_instance;
+  NginxConfig config;
 
   ServerTestFixture() : server_instance(nullptr) {}
 
   void SetUp() override {
-    server_instance = std::make_unique<Server>(io_service, 1234);
+    server_instance = std::make_unique<Server>(io_service, 1234, config);
   }
   
   void TearDown() override {
@@ -60,8 +61,9 @@ TEST_F(ServerTestFixture, StartStopMultipleTimes) {
 
 // Check that the Server is not running on construction
 TEST_F(ServerTestFixture, ServerNotRunningOnConstruction) {
+  NginxConfig config;
   server_instance.reset();
-  server_instance = std::make_unique<Server>(io_service, 1234);
+  server_instance = std::make_unique<Server>(io_service, 1234, config);
   EXPECT_FALSE(server_instance->IsRunning());
 }
 

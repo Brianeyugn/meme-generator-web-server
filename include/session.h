@@ -5,6 +5,7 @@
 
 #include <boost/asio.hpp>
 
+#include "config_parser.h"
 #include "echo_request_handler.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
@@ -13,7 +14,7 @@ using boost::asio::ip::tcp;
 
 class Session {
  public:
-  Session(boost::asio::io_service& io_service);
+  Session(boost::asio::io_service& io_service, const NginxConfig& config);
 
   void Start();
   char* GetData();
@@ -24,6 +25,9 @@ class Session {
   void HandleWrite(const boost::system::error_code& error);
   std::string HandleRequest(std::string request_string, 
       std::vector<RequestHandler*> handlers);
+  void ParseConfigFile(std::vector<RequestHandler*>& handlers);
+
+  // temporary overloading
   void ParseConfigFile(const std::string& filename, 
       std::vector<RequestHandler*>& handlers);
 
@@ -32,6 +36,7 @@ class Session {
   char data_[max_length];
   std::string read_string_buffer_;  // Accumulates all reads until a request is found.
   tcp::socket socket_;
+  NginxConfig config_;
 };
 
 inline char* Session::GetData() {

@@ -15,8 +15,8 @@
 
 using boost::asio::ip::tcp;
 
-Session::Session(boost::asio::io_service& io_service)
-  : socket_(io_service) {
+Session::Session(boost::asio::io_service& io_service, const NginxConfig& config)
+  : socket_(io_service), config_(config) {
   Logger *log = Logger::GetLogger();
   log->LogInfo("Initialized Session");
 }
@@ -67,7 +67,7 @@ void Session::HandleRead(const boost::system::error_code& error,
     // Feed handlers to handler vector.
     std::vector<RequestHandler*> handlers;
     // Parse config file and handle configs dynamically
-    ParseConfigFile("../configuration/handler_config", handlers);
+    ParseConfigFile(handlers);
 
     // (DEBUG) Dump client request to Server console.
     log->LogDebug("Client requested: " + request_string);
@@ -145,6 +145,43 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
 	delete rh;
 
 	return response_string;
+}
+
+void Session::ParseConfigFile(std::vector<RequestHandler*>& handlers) {
+  Logger *log = Logger::GetLogger();
+
+  for (auto statement : config_.statements_) {
+    if (statement.get()->tokens_[0] != "location") {
+      continue;
+    }
+
+    std::string handler_type, url_prefix, directory_path;
+    handler_type = statement.get()->tokens_[1];
+    url_prefix = statement.get()->tokens_[2];
+    log->LogDebug("handler type: " + handler_type);
+    log->LogDebug("url prefix: " + url_prefix);
+
+    // Create handler based on type.
+    if (handler_type == "static") {
+      for (auto child_statement : statement->child_block_.get()->statements_) {
+        if (child_statement.get()->tokens_[0] != "root") {
+          continue;
+        }
+
+        directory_path = child_statement.get()->tokens_[1];
+      }
+
+      log->LogDebug("directory path: " + directory_path);
+      StaticRequestHandler* srh = new StaticRequestHandler("", url_prefix, directory_path);
+      handlers.push_back(srh);
+    } else if (handler_type == "echo") {
+      EchoRequestHandler* erh = new EchoRequestHandler("", url_prefix);
+      handlers.push_back(erh);
+    } else {
+      // Invalid handler type specified in config file.
+      log->LogWarn("Invalid handler type specified in config file: " + handler_type);
+    }
+  }
 }
 
 void Session::ParseConfigFile(const std::string& filename, std::vector<RequestHandler*>& handlers) {

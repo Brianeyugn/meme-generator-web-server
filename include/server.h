@@ -3,13 +3,14 @@
 
 #include <boost/asio.hpp>
 
+#include "config_parser.h"
 #include "session.h"
 
 using boost::asio::ip::tcp;
 
 class Server {
  public:
-  Server(boost::asio::io_service& io_service, short port);
+  Server(boost::asio::io_service& io_service, short port, const NginxConfig& config);
   bool IsRunning() const;
   int GetActiveSessions() const;
 
@@ -20,11 +21,12 @@ class Server {
       const boost::system::error_code& error);
 
  private:
-  void StartAccept();
+  void StartAccept_();
   boost::asio::io_service& io_service_;
   tcp::acceptor acceptor_;
   bool is_running_;
   int active_sessions_;
+  NginxConfig config_;
 };
 
 #endif  // GOOFYGOOGLERSSERVER_SERVER_H_

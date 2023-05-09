@@ -10,7 +10,8 @@
 using boost::asio::ip::tcp;
 class SessionHandleReadTestFixture : public testing::Test {
  protected:
-  SessionHandleReadTestFixture() : io_service_(), session_(io_service_), socket_(io_service_) {}
+  NginxConfig config;
+  SessionHandleReadTestFixture() : io_service_(), session_(io_service_, config), socket_(io_service_) {}
 
   virtual ~SessionHandleReadTestFixture() {}
 

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
       // bin/Server starter_config
       log->LogFatal(
           "Invalid arguments. Usage: ./path/to/Server path/to/config/file");
-     
+
       return 1;
     }
 
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
     
     // For testing-- via commandline-- can also use:
     // Server s(io_service, std::atoi(argv[1]));
-    Server s(io_service, server_port);
+    Server s(io_service, server_port, config);
     io_service.run();
 
     log->LogInfo("Stopping Server");
