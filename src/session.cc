@@ -8,6 +8,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+#include "config_parser.h"
 #include "logging.h"
 #include "echo_request_handler.h"
 #include "request_handler.h"
@@ -16,7 +17,7 @@
 using boost::asio::ip::tcp;
 
 Session::Session(boost::asio::io_service& io_service, const NginxConfig& config)
-  : socket_(io_service), config_(config) {
+  : socket_(io_service), config_(*(config.statements_[0].get()->child_block_.get())) {
   Logger *log = Logger::GetLogger();
   log->LogInfo("Initialized Session");
 }
@@ -187,6 +188,7 @@ void Session::ParseConfigFile(std::vector<RequestHandler*>& handlers) {
   Logger *log = Logger::GetLogger();
 
   for (auto statement : config_.statements_) {
+    log->LogDebug("parsing statement: " + statement.get()->ToString(0));
     if (statement.get()->tokens_[0] != "location") {
       continue;
     }
