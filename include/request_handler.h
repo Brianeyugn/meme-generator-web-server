@@ -18,6 +18,7 @@ class RequestHandler {
 
   static std::string GetNextToken(std::string str, std::string delimiter);
   static std::string GetRequestURL(std::string request_string);
+  static bool ContainsSubstring(const std::string&, const std::string& substr);
 
   // Getters.
   std::string GetResponseString_();

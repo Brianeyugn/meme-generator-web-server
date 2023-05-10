@@ -75,7 +75,7 @@ class SessionHandleReadTestFixture : public testing::Test {
 TEST_F(SessionHandleReadTestFixture, SessionHandlesReadRequestStatic) {
   std::string request_string = "GET /static1/test.html HTTP/1.1";
   std::string actual_response = session_.HandleRequest(request_string, handlers);
-  std::string expected_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 141\r\n\r\n<!DOCTYPE html>\n<html>\n<body style=\"background-color:powderblue;\">\n\n<h1>This is a heading</h1>\n<p>This is a paragraph.</p>\n\n</body>\n</html>\n\n";
+  std::string expected_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 141\r\nConnection: keep-alive\r\n\r\n<!DOCTYPE html>\n<html>\n<body style=\"background-color:powderblue;\">\n\n<h1>This is a heading</h1>\n<p>This is a paragraph.</p>\n\n</body>\n</html>\n\n";
   EXPECT_EQ(expected_response, actual_response);
 }
 
@@ -83,7 +83,7 @@ TEST_F(SessionHandleReadTestFixture, SessionHandlesReadRequestStatic) {
 TEST_F(SessionHandleReadTestFixture, SessionHandlesReadRequestNotFound) {
   std::string request_string = "GET /not_available/test.html HTTP/1.1";
   std::string actual_response = session_.HandleRequest(request_string, handlers);
-  std::string expected_response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.";
+  std::string expected_response = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\nConnection: keep-alive\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.";
   EXPECT_EQ(expected_response, actual_response);
 }
 

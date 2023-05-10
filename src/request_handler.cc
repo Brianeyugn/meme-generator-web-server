@@ -31,6 +31,12 @@ bool RequestHandler::IsMatchingHandler() {
   return request_directory_name == this->handled_directory_name_;
 }
 
+// Given str and substr to be found.
+// Returns true if substr is found in str, returns false if not found.
+bool RequestHandler::ContainsSubstring(const std::string& str, const std::string& substr) {
+  return (str.find(substr) != std::string::npos);
+}
+
 // Parse the request
 void RequestHandler::ParseRequest() {
   // Return 404 Not Found since this is a simple base clase RequestHandler
@@ -38,12 +44,20 @@ void RequestHandler::ParseRequest() {
   std::string response_content_type = "text/plain";
   std::string file_contents = "404 Not Found. Error. The requested URL was not found on this Server.";
   std::string response_content_length = std::to_string(file_contents.size());
+  std::string response_connection = "keep-alive";
+
+  // Check if connection close demanded
+  bool close_request_exists = ContainsSubstring(this->request_string_, "Connection: close");
+  if(close_request_exists == true) {
+    response_connection = "close";
+  }
 
   // Response headers and message body.
   std::string response;
   response.append("HTTP/1.1 " + response_status_code + "\r\n");
   response.append("Content-Type: " + response_content_type + "\r\n");
   response.append("Content-Length: " + response_content_length + "\r\n");
+  response.append("Connection: " + response_connection + "\r\n");
   response.append("\r\n");
   response.append(file_contents);
 

@@ -67,6 +67,7 @@ void StaticRequestHandler::ParseRequest() {  // Overide parent ParseRequest();
   std::string response_content_type;
   std::string file_contents;
   std::string response_content_length;
+  std::string response_connection = "keep-alive";
 
   // Valid file found in directory.
   if (FileExists_(request_filename, base_directory_path_, file)) {
@@ -87,11 +88,18 @@ void StaticRequestHandler::ParseRequest() {  // Overide parent ParseRequest();
     response_content_length = std::to_string(file_contents.size());
   }
 
+  // Check if connection close demanded
+  bool close_request_exists = ContainsSubstring(this->request_string_, "Connection: close");
+  if(close_request_exists == true) {
+    response_connection = "close";
+  }
+
   // Response headers and message body.
   std::string response;
   response.append("HTTP/1.1 " + response_status_code + "\r\n");
   response.append("Content-Type: " + response_content_type + "\r\n");
   response.append("Content-Length: " + response_content_length + "\r\n");
+  response.append("Connection: " + response_connection + "\r\n");
   response.append("\r\n");
   response.append(file_contents);
 

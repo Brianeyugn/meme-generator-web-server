@@ -28,7 +28,8 @@ TEST(StaticRequestHandlerTest, GetContentTypeReturnsAllCorrectContentForEachExte
   EXPECT_EQ(StaticRequestHandler::GetContentType(".bin"), "application/octet-stream");
   EXPECT_EQ(StaticRequestHandler::GetContentType(""), "application/octet-stream");
   EXPECT_EQ(StaticRequestHandler::GetContentType(".zip"), "application/zip");
-}*/
+}
+*/
 
 // Test of StaticRequestHandler handling of a file that will not be found.
 TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileNotFoundWhenNotFound) {
@@ -37,7 +38,7 @@ TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileNotFoundWhenNotFoun
   srh.SetRequestString(request_string);
   srh.ParseRequest();
   std::string response_string = srh.GetResponseString_();
-  EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
+  EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\nConnection: keep-alive\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
 }
 
 // Test of StaticRequestHandler handling of a file that will be found.
@@ -48,5 +49,5 @@ TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileFoundWhenFound) {
   srh.SetRequestString(request_string);
   srh.ParseRequest();
   std::string response_string = srh.GetResponseString_();
-  EXPECT_NE(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
+  EXPECT_EQ(response_string, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nConnection: keep-alive\r\n\r\nhello");
 }
