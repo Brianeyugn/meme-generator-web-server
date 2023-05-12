@@ -68,7 +68,8 @@ void Session::HandleRead(const boost::system::error_code& error,
     // Feed handlers to handler vector.
     std::vector<RequestHandler*> handlers;
     // Parse config file and handle configs dynamically
-    ParseConfigFile(handlers);
+    std::vector<ParsedConfig*> parsed_configs = ParseConfigFile();
+    CreateHandlers(parsed_configs, handlers);
 
     // (DEBUG) Dump client request to Server console.
     log->LogDebug("Client requested: " + request_string);
@@ -184,8 +185,9 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
 	return response_string;
 }
 
-void Session::ParseConfigFile(std::vector<RequestHandler*>& handlers) {
+std::vector<ParsedConfig*> Session::ParseConfigFile() {
   Logger *log = Logger::GetLogger();
+  std::vector<ParsedConfig*> parsed_configs;
 
   NginxConfig subconfig = *(config_.statements_[0].get()->child_block_.get());
   for (auto statement : subconfig.statements_) {
@@ -194,15 +196,39 @@ void Session::ParseConfigFile(std::vector<RequestHandler*>& handlers) {
       continue;
     }
 
-    std::string handler_type, url_prefix, directory_path;
+    std::string handler_type, url_prefix;
     handler_type = statement.get()->tokens_[1];
     url_prefix = statement.get()->tokens_[2];
     log->LogDebug("handler type: " + handler_type);
     log->LogDebug("url prefix: " + url_prefix);
 
-    // Create handler based on type.
+    // Set ParsedConfig struct.
+    ParsedConfig* parsed_config;
     if (handler_type == "static") {
-      for (auto child_statement : statement->child_block_.get()->statements_) {
+      parsed_config->handler_type = HandlerType::kStatic;
+    } else if (handler_type == "echo") {
+      parsed_config->handler_type = HandlerType::kEcho;
+    } else {
+      parsed_config->handler_type = HandlerType::kNone;
+    }
+    parsed_config->url_prefix = url_prefix;
+    parsed_config->statement = statement;
+
+    parsed_configs.push_back(parsed_config);
+  }
+
+  return parsed_configs;
+}
+
+void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::vector<RequestHandler*>& handlers) {
+  Logger *log = Logger::GetLogger();
+  std::string directory_path;
+  // Create handler based on type.
+  for (ParsedConfig* parsed_config : parsed_configs) {
+    switch (parsed_config->handler_type)
+    {
+      case HandlerType::kStatic: {
+      for (auto child_statement : parsed_config->statement->child_block_.get()->statements_) {
         if (child_statement.get()->tokens_[0] != "root") {
           continue;
         }
@@ -211,14 +237,19 @@ void Session::ParseConfigFile(std::vector<RequestHandler*>& handlers) {
       }
 
       log->LogDebug("directory path: " + directory_path);
-      StaticRequestHandler* srh = new StaticRequestHandler("", url_prefix, directory_path);
+      StaticRequestHandler* srh = new StaticRequestHandler("", parsed_config->url_prefix, directory_path);
       handlers.push_back(srh);
-    } else if (handler_type == "echo") {
-      EchoRequestHandler* erh = new EchoRequestHandler("", url_prefix);
-      handlers.push_back(erh);
-    } else {
-      // Invalid handler type specified in config file.
-      log->LogWarn("Invalid handler type specified in config file: " + handler_type);
+      break;
+      }
+      case HandlerType::kEcho: {
+        EchoRequestHandler* erh = new EchoRequestHandler("", parsed_config->url_prefix);
+        handlers.push_back(erh);
+        break;
+      }
+      default: {
+        // Invalid handler type specified in config file.
+        log->LogWarn("Invalid handler type specified in config file: " + parsed_config->handler_type);
+      }
     }
   }
 }

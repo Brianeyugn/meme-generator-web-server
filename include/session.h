@@ -12,6 +12,18 @@
 
 using boost::asio::ip::tcp;
 
+enum HandlerType {
+  kStatic = 0,
+  kEcho,
+  kNone,
+};
+
+struct ParsedConfig {
+  HandlerType handler_type;
+  std::string url_prefix;
+  std::shared_ptr<NginxConfigStatement> statement;
+};
+
 class Session {
  public:
   Session(boost::asio::io_service& io_service, const NginxConfig& config);
@@ -26,7 +38,8 @@ class Session {
   void HandleWriteShutdown(const boost::system::error_code& error);
   std::string HandleRequest(std::string request_string, 
       std::vector<RequestHandler*> handlers);
-  void ParseConfigFile(std::vector<RequestHandler*>& handlers);
+  std::vector<ParsedConfig*> ParseConfigFile();
+  void CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::vector<RequestHandler*>& handlers);
 
   // temporary overloading
   void ParseConfigFile(const std::string& filename, 
