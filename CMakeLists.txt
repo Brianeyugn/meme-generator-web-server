@@ -31,6 +31,7 @@ add_subdirectory(/usr/src/googletest googletest)
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.50 REQUIRED COMPONENTS system log_setup log)
 message(STATUS "Boost version: ${Boost_VERSION}")
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 include_directories(include)
 

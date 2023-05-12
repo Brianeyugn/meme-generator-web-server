@@ -10,7 +10,7 @@ SERVER_IP="127.0.0.1"
 SERVER_PORT="8080"
 
 CONFIG_PATH="${PROJ_PATH}/configuration"
-CONFIG_NAME="starter_config"
+CONFIG_NAME="starter.conf"
 
 # Setup functions
 init_server() {
@@ -37,6 +37,7 @@ Accept-Encoding: gzip, deflate\r\n\r\n"
   EXPECTED_OUTPUT="HTTP/1.1 200 OK
 Content-Type: text/plain
 Content-Length: 778
+Connection: keep-alive
 
 She was dressed in rich materials--satins, and lace and silks -- all of white. Her shoes
 were white. And she had a long white veil dependent from her hair, and she had bridal flowers
