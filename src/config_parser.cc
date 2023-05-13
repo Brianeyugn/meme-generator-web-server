@@ -296,7 +296,7 @@ int NginxConfig::GetPort() {
   for(auto cur_statement : this->statements_) {
     if (cur_statement->child_block_.get() == nullptr) {
       if (cur_statement->tokens_.size() == 2 && 
-          cur_statement->tokens_[0] == "listen") {
+          cur_statement->tokens_[0] == "port") {
         port_value = atoi(cur_statement->tokens_[1].c_str());
         if (port_value < 0 || port_value > 65353) { // Validate port range.
           return -1;

@@ -6,14 +6,17 @@
 #include <sstream>  // For iostringstream
 
 #include <boost/asio.hpp>
+#include <boost/beast/http.hpp>
 #include <boost/bind.hpp>
 
 #include "config_parser.h"
-#include "logging.h"
 #include "echo_request_handler.h"
+#include "logging.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
 
+namespace http = boost::beast::http;
+using http::string_body;
 using boost::asio::ip::tcp;
 
 Session::Session(boost::asio::io_service& io_service, const NginxConfig& config)
@@ -158,8 +161,23 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
   Logger *log = Logger::GetLogger();
   log->LogDebug("Handling request");
 
+  // Convert request_string to boost request object.
+  http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
+
+  // Boost response object.
+  http::response<string_body> boost_response;
+
+  // temporarilly just let first handler handle-- will have to properly dispatch later.
+  handlers[0]->ParseRequest(boost_request, boost_response);
+
+  // Convert boost response object to string.
+  std::string response_string = RequestHandler::ResponseToString(boost_response);
+
+  return response_string;
+
+  /* // Old dispatching code
 	std::string response_string;
-	RequestHandler* rh = new RequestHandler("", ""); // Default request handler (Always returns 404 NOT FOUND).
+	//RequestHandler* rh = new RequestHandler("", ""); // Default request handler (Always returns 404 NOT FOUND).
 
 	bool found_matching_handler = false;
 	for (int i = 0; i < handlers.size(); i++) {
@@ -171,7 +189,6 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
 			response_string = handlers[i]->GetResponseString_();
 		}
 	}
-
 	if (!found_matching_handler) { // Let default handler handle if no matching handler found.
     log->LogDebug("No matching handler found, using default");
 		rh->SetRequestString(request_string);
@@ -181,8 +198,7 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
 
 	// Clean up memory.
 	delete rh;
-
-	return response_string;
+  */
 }
 
 std::vector<ParsedConfig*> Session::ParseConfigFile() {
@@ -237,12 +253,12 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ve
       }
 
       log->LogDebug("directory path: " + directory_path);
-      StaticRequestHandler* srh = new StaticRequestHandler("", parsed_config->url_prefix, directory_path);
+      StaticRequestHandler* srh = new StaticRequestHandler(parsed_config->url_prefix, directory_path);
       handlers.push_back(srh);
       break;
       }
       case HandlerType::kEcho: {
-        EchoRequestHandler* erh = new EchoRequestHandler("", parsed_config->url_prefix);
+        EchoRequestHandler* erh = new EchoRequestHandler(parsed_config->url_prefix);
         handlers.push_back(erh);
         break;
       }
@@ -271,10 +287,10 @@ void Session::ParseConfigFile(const std::string& filename, std::vector<RequestHa
 
     // Create handler based on type.
     if (handler_type == "static") {
-      StaticRequestHandler* srh = new StaticRequestHandler("", url_prefix, directory_path);
+      StaticRequestHandler* srh = new StaticRequestHandler(url_prefix, directory_path);
       handlers.push_back(srh);
     } else if (handler_type == "echo") {
-      EchoRequestHandler* erh = new EchoRequestHandler("", url_prefix);
+      EchoRequestHandler* erh = new EchoRequestHandler(url_prefix);
       handlers.push_back(erh);
     } else {
       // Invalid handler type specified in config file.

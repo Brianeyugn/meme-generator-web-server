@@ -2,21 +2,12 @@
 
 #include <string>
 
+#include <boost/beast/http.hpp>
+
 #include "gtest/gtest.h"
 
-// Test set and get of request_string_for correctness.
-TEST(RequestHandlerTest, SetGetRequestString) {
-  RequestHandler rh =  RequestHandler("","");
-  rh.SetRequestString("this is my test string");
-  EXPECT_EQ(rh.GetRequestString_(), "this is my test string");
-}
-
-// Test set and get of response_string_for correctness.
-TEST(RequestHandlerTest, SetGetResponseString) {
-  RequestHandler rh =  RequestHandler("","");
-  rh.SetRequestString("this is my test string");
-  EXPECT_EQ(rh.GetRequestString_(), "this is my test string");
-}
+namespace http = boost::beast::http;
+using http::string_body;
 
 // Test static function GetNextToken for retrieval of consequtivly "/" delimited characters
 TEST(RequestHandlerTest, GetNextTokenInStringPath) {
@@ -44,36 +35,6 @@ TEST(RequestHandlerTest, GetRequestURLFromRequstLine) {
   EXPECT_EQ(request_url, "/static1/test.html");
 }
 
-class RequstHandlerFixture : public ::testing::Test {
- protected:
-  void SetUp() override {
-    return;
-  }
-  RequestHandler rh = RequestHandler("","static1");
-};
-
-// Test for Non-matching request to handler
-TEST_F(RequstHandlerFixture, NonmatchingRequestDoesNotMatch) {
-  rh.SetRequestString("GET /random_dir_name/test.html HTTP/1.1");
-  bool result = rh.IsMatchingHandler();
-  EXPECT_FALSE(result);
-}
-
-// Test for Matching request to handler
-TEST_F(RequstHandlerFixture, MatchingRequestDoesMatch) {
-  rh.SetRequestString("GET /static1/test.html HTTP/1.1");
-  bool result = rh.IsMatchingHandler();
-  EXPECT_TRUE(result);
-}
-
-// Test for RequestHandler ParseRequest returning not found as intended by default.
-TEST_F(RequstHandlerFixture, RequestHandlerParseRequestReturnNotFound) {
-  rh.SetRequestString("GET /static1/test.html HTTP/1.1");
-  rh.ParseRequest();
-  std::string response_string = rh.GetResponseString_();
-  EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\nConnection: keep-alive\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
-}
-
 // Test static function ContainsSubstring() when string exists.
 TEST(RequestHandlerTest, ContainsSubstringFindsStringWhenExists) {
   std::string request_string = "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\nAccept-Language: en-US,en;q=0.5\r\nAccept-Encoding: gzip, deflate, br\r\nConnection: keep-alive\r\nReferer: https://www.example.com/";
@@ -96,4 +57,21 @@ TEST(RequestHandlerTest, ContainsSubstringNotFindsStringWhenEmptyString) {
   std::string target_substr = "Connection: keep-alive";
   bool substr_exists = RequestHandler::ContainsSubstring(request_string, target_substr);
   EXPECT_EQ(substr_exists, false);
+}
+
+// Test static function ResponseToString()
+TEST(RequestHandlerTest, ResponseToStringValidConversion) {
+  //Set up boost string.
+  http::response<string_body> boost_response;
+  boost_response.version(11);
+  boost_response.result(http::status::ok);
+  boost_response.set(http::field::content_type, "text/plain");
+  boost_response.body() = "Hello, world!";
+
+  // Convert boost string to string
+  std::string response_string = RequestHandler::ResponseToString(boost_response);
+
+  // Compare actual to expected string values.
+  std::string expected_response_string = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello, world!";
+  EXPECT_EQ(response_string, expected_response_string);
 }

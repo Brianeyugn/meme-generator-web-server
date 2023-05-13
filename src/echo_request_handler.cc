@@ -1,24 +1,31 @@
 #include "echo_request_handler.h"
 
+#include <sstream>
 #include <string>
 
-EchoRequestHandler::EchoRequestHandler(std::string request_string, std::string handled_directory_name)
-	: RequestHandler(request_string, handled_directory_name) {}
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+
+namespace http = boost::beast::http;
+using http::string_body;
+
+EchoRequestHandler::EchoRequestHandler(std::string handled_directory_name)
+	: RequestHandler(handled_directory_name) {}
 
 // Parse the echo request and update the response string
-void EchoRequestHandler::ParseRequest() {  // Overide parent ParseRequest();
+Status EchoRequestHandler::ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) {  // Overide parent ParseRequest();
 	// Echo handler returns echo no matter what.
-	std::string response_status_code = "200 OK";
-	std::string response_content_type = "text/plain";
-  std::string file_contents = this->request_string_;
+  std::ostringstream oss;
+  oss << req;
+  std::string request_string = oss.str();
 
   // Response headers and message body.
-  std::string response;
-  response.append("HTTP/1.1 " + response_status_code + "\r\n");
-  response.append("Content-Type: " + response_content_type + "\r\n");
-  response.append("\r\n");
-  response.append(file_contents);
+  res.version(11); // HTTP/1.1
+  res.result(http::status::ok); // 200 OK
+  res.set(http::field::content_type, "text/plain");
+  res.body() = request_string;
 
-  // Update response string.
-  response_string_ = response;
+  // Error status return.
+  Status return_status = Status(0, "Status Message: Success");
+  return return_status;
 }

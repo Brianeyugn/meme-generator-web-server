@@ -5,12 +5,18 @@
 #include <iostream>
 #include <map>
 
-StaticRequestHandler::StaticRequestHandler(std::string request_string, std::string handled_directory_name, std::string base_directory_path)
-  : RequestHandler(request_string, handled_directory_name), base_directory_path_(base_directory_path) {}
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+
+namespace http = boost::beast::http;
+using http::string_body;
+
+StaticRequestHandler::StaticRequestHandler(std::string handled_directory_name, std::string base_directory_path)
+  : RequestHandler(handled_directory_name), base_directory_path_(base_directory_path) {}
 
 // Helper functions for ParseRequest().
 static std::string GetFilename_(std::string request_url) {
-  int last_path_position = request_url.find_last_of("/");
+  size_t last_path_position = request_url.find_last_of("/");
   std::string request_filename = request_url.substr(last_path_position + 1);
   return request_filename;
 }
@@ -55,54 +61,54 @@ static bool FileExists_(const std::string file_name, const std::string file_path
 
 // Parse the static request and update the response string
 // Static handler returns response depending on if file found.
-void StaticRequestHandler::ParseRequest() {  // Overide parent ParseRequest();
-  std::string request_url = GetRequestURL(request_string_);
+Status StaticRequestHandler::ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) {  // Overide parent ParseRequest();
+  // Convert request to string format.
+  std::ostringstream oss;
+  oss << req;
+  std::string request_string = oss.str();
+
+  std::string request_url = GetRequestURL(request_string);
   std::string request_filename = GetFilename_(request_url);
 
   // Find requested file in Server directory.
   std::ifstream file;
 
-  // Response Components
-  std::string response_status_code;
+  // Response Components.
   std::string response_content_type;
   std::string file_contents;
-  std::string response_content_length;
-  std::string response_connection = "keep-alive";
 
   // Valid file found in directory.
   if (FileExists_(request_filename, base_directory_path_, file)) {
     // 200 OK CASE
-    response_status_code = "200 OK";
+    res.result(http::status::ok); // 200 OK
     std::string extension = std::filesystem::path(request_filename).extension().string();
     response_content_type = GetContentType_(extension);
+    res.set(http::field::content_type, response_content_type);
 
     // Read file data for response
     file_contents = std::string((std::istreambuf_iterator<char>(file)),
       std::istreambuf_iterator<char>());
-    response_content_length = std::to_string(file_contents.size());
   } else {
     // 404 NOT FOUND CASE
-    response_status_code = "404 Not Found";
+    res.result(boost::beast::http::status::not_found); // 404 Not Found.
     response_content_type = GetContentType_(".txt");
-    file_contents = "404 Not Found. Error. The requested URL was not found on this Server.";
-    response_content_length = std::to_string(file_contents.size());
+    file_contents = "404 Not Found. Error. The requested URL was not found on this server.";
   }
 
-  // Check if connection close demanded
-  bool close_request_exists = ContainsSubstring(this->request_string_, "Connection: close");
-  if(close_request_exists == true) {
-    response_connection = "close";
+  // Check if connection keep alive demanded
+  bool keep_alive_request_exists = req.keep_alive();
+  if (keep_alive_request_exists == true) {
+    res.set(http::field::connection, "keep-alive");
+  } else {
+    res.set(http::field::connection, "close");
   }
 
   // Response headers and message body.
-  std::string response;
-  response.append("HTTP/1.1 " + response_status_code + "\r\n");
-  response.append("Content-Type: " + response_content_type + "\r\n");
-  response.append("Content-Length: " + response_content_length + "\r\n");
-  response.append("Connection: " + response_connection + "\r\n");
-  response.append("\r\n");
-  response.append(file_contents);
+  res.set(http::field::content_type, response_content_type);
+  res.body() = file_contents;
+  res.prepare_payload(); // Adjusts Content-Length and Transfer-Encoding field values based on body properties.
 
-  // Update response string.
-  response_string_ = response;
+  // Error Status return.
+  Status return_status = Status(0, "Status Message: Success");
+  return return_status;
 }

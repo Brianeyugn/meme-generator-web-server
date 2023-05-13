@@ -33,21 +33,39 @@ TEST(StaticRequestHandlerTest, GetContentTypeReturnsAllCorrectContentForEachExte
 
 // Test of StaticRequestHandler handling of a file that will not be found.
 TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileNotFoundWhenNotFound) {
-  StaticRequestHandler srh = StaticRequestHandler("","static1","");
+  // Initialize.
+  StaticRequestHandler srh = StaticRequestHandler("static1","");
+
+  // Set up request.
   std::string request_string = "GET /static1/filenotavailable.txt HTTP/1.1";
-  srh.SetRequestString(request_string);
-  srh.ParseRequest();
-  std::string response_string = srh.GetResponseString_();
-  EXPECT_EQ(response_string, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: 69\r\nConnection: keep-alive\r\n\r\n404 Not Found. Error. The requested URL was not found on this Server.");
+  http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
+
+  // Parse to obtain response.
+  http::response<string_body> boost_response;
+  srh.ParseRequest(boost_request, boost_response);
+
+  // Compare actual response to expected response.
+  std::string response_string = RequestHandler::ResponseToString(boost_response);
+  std::string expected_response_string = "HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: 69\r\n\r\n404 Not Found. Error. The requested URL was not found on this server.";
+  EXPECT_EQ(response_string, expected_response_string);
 }
 
 // Test of StaticRequestHandler handling of a file that will be found.
 TEST(StaticRequestHandlerTest, StaticRequestHandlerReturnFileFoundWhenFound) {
+  // Initialize.
   std::string base_1 = "../static_files/static_base_directory_1";
-  StaticRequestHandler srh = StaticRequestHandler("","static1",base_1);
-  std::string request_string = "GET /static1/smol.txt HTTP/1.1";
-  srh.SetRequestString(request_string);
-  srh.ParseRequest();
-  std::string response_string = srh.GetResponseString_();
-  EXPECT_EQ(response_string, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nConnection: keep-alive\r\n\r\nhello");
+  StaticRequestHandler srh = StaticRequestHandler("static1",base_1);
+
+  // Set up request.
+  std::string request_string = "GET /static1/smol.txt HTTP/1.1\r\n";
+  http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
+
+  // Parse to obtain response.
+  http::response<string_body> boost_response;
+  srh.ParseRequest(boost_request, boost_response);
+
+  // Compare actual response to expected response.
+  std::string response_string = RequestHandler::ResponseToString(boost_response);
+  std::string expected_response_string = "HTTP/1.1 200 OK\r\nConnection: keep-alive\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhello";
+  EXPECT_EQ(response_string, expected_response_string);
 }

@@ -3,52 +3,34 @@
 
 #include <string>
 
-/* RequestHandler Ussage Notes */
-// After constructing handler object.
-// Must SetRequestString_() first.
-// Then can check IsMatchingHandler().
-// Or Then can also ParseRequest().
+#include <boost/beast/http.hpp>
 
+namespace http = boost::beast::http;
+using http::string_body;
+
+// Define struct to represent Status
+struct Status {
+  int code_; // 0 represents success.
+  std::string message_;
+
+  Status(int code, const std::string message) : code_(code), message_(message) {}
+};
+
+
+// Abstract RequestHandler Class.
 class RequestHandler {
  public:
-  RequestHandler(std::string request_string, std::string handled_directory_name);
+  RequestHandler(std::string handled_directory_name);
 
-  bool IsMatchingHandler();
-  virtual void ParseRequest();
+  virtual Status ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) = 0;
 
   static std::string GetNextToken(std::string str, std::string delimiter);
   static std::string GetRequestURL(std::string request_string);
   static bool ContainsSubstring(const std::string&, const std::string& substr);
-
-  // Getters.
-  std::string GetResponseString_();
-  std::string GetRequestString_();
-
-  // Setters.
-  void SetRequestString(std::string request_string);
-  void SetResponseString(std::string response_string);
-
+  static http::request<string_body> StringToRequest(std::string request_string);
+  static std::string ResponseToString(http::response<string_body> boost_response);
  protected:
-  std::string request_string_;
   std::string handled_directory_name_;
-  std::string response_string_;
 };
-
-// Must ParseRequest() first, then GetResponseString_().
-inline std::string RequestHandler::GetResponseString_() {
-  return this->response_string_;
-}
-
-inline std::string RequestHandler::GetRequestString_() {
-  return this->request_string_;
-}
-
-inline void RequestHandler::SetRequestString(std::string request_string) {
-  this->request_string_ = request_string;
-}
-
-inline void RequestHandler::SetResponseString(std::string response_string) {
-  this->response_string_ = response_string;
-}
 
 #endif  // GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_
