@@ -274,35 +274,3 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ve
     }
   }
 }
-
-void Session::ParseConfigFile(const std::string& filename, std::vector<RequestHandler*>& handlers) {
-  Logger *log = Logger::GetLogger();
-  std::ifstream config_file(filename);
-  std::string line;
-
-  while (getline(config_file, line)) {
-    // Parse line to extract handler type, URL prefix, and directory path.
-    // For example: "static /static1 ../static_files/static_base_directory_1"
-    std::istringstream iss(line);
-    std::string url_prefix, handler_type, directory_path;
-    iss >> url_prefix >> handler_type >> directory_path;
-    log->LogDebug("url prefix: " + url_prefix);
-    log->LogDebug("handler type: " + handler_type);
-    log->LogDebug("directory path: " + directory_path);
-
-    // Create handler based on type.
-    if (handler_type == "StaticHandler") {
-      StaticRequestHandler* srh = new StaticRequestHandler(url_prefix, directory_path);
-      handlers.push_back(srh);
-    } else if (handler_type == "EchoHandler") {
-      EchoRequestHandler* erh = new EchoRequestHandler(url_prefix);
-      handlers.push_back(erh);
-    } else if (handler_type == "None") {
-      RequestHandler* rh = new RequestHandler(url_prefix);
-      handlers.push_back(rh);
-    } else {
-      // Invalid handler type specified in config file.
-      log->LogWarn("Invalid handler type specified in config file: " + handler_type);
-    }
-  }
-}
