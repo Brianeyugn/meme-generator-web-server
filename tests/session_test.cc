@@ -29,15 +29,15 @@ class SessionHandleReadTestFixture : public testing::Test {
     handlers.push_back(srh2);
 
     config_file_ = std::ofstream("config_test.txt");
-    config_file_ << "static /static1 ../static_files/static_base_directory_1\n";
-    config_file_ << "echo /echo1\n";
-    config_file_ << "invalid /invalid\n";
+    config_file_ << "/static1 StaticHandler ../static_files/static_base_directory_1\n";
+    config_file_ << "/echo1 EchoHandler\n";
+    config_file_ << "/invalid invalid\n";
     config_file_.close();
     empty_file_ = std::ofstream("empty_file.txt");
     empty_file_.close();
     malconfig_file_ = std::ofstream("malconfig_test.txt");
-    malconfig_file_ << "static static2\n";
-    malconfig_file_ << "echo\n";
+    malconfig_file_ << "/static2 StaticHandler\n";
+    malconfig_file_ << "EchoHandler\n";
     malconfig_file_.close();
   }
 
@@ -124,5 +124,5 @@ TEST_F(SessionHandleReadTestFixture, TestParseConfigFileMalformedLine) {
       }
     session_.ParseConfigFile("malconfig_test.txt", handler_2);
 
-    EXPECT_EQ(handler_2.size(), 2);
+    EXPECT_EQ(handler_2.size(), 1);
 }

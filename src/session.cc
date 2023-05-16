@@ -205,26 +205,26 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
   Logger *log = Logger::GetLogger();
   std::vector<ParsedConfig*> parsed_configs;
 
-  NginxConfig subconfig = *(config_.statements_[0].get()->child_block_.get());
-  for (auto statement : subconfig.statements_) {
+  // NginxConfig subconfig = *(config_.statements_[0].get()->child_block_.get());
+  for (auto statement : config_.statements_) {
     log->LogDebug("parsing statement: " + statement.get()->ToString(0));
     if (statement.get()->tokens_[0] != "location") {
       continue;
     }
 
     std::string handler_type, url_prefix;
-    handler_type = statement.get()->tokens_[1];
-    url_prefix = statement.get()->tokens_[2];
-    log->LogDebug("handler type: " + handler_type);
+    url_prefix = statement.get()->tokens_[1];
+    handler_type = statement.get()->tokens_[2];
     log->LogDebug("url prefix: " + url_prefix);
+    log->LogDebug("handler type: " + handler_type);
 
     // Set ParsedConfig struct.
     ParsedConfig* parsed_config;
-    if (handler_type == "static") {
+    if (handler_type == "StaticHandler") {
       parsed_config->handler_type = HandlerType::kStatic;
-    } else if (handler_type == "echo") {
+    } else if (handler_type == "EchoHandler") {
       parsed_config->handler_type = HandlerType::kEcho;
-    } else if (handler_type == "none") {
+    } else if (handler_type == "None") {
       parsed_config->handler_type = HandlerType::kNone;
     }
     parsed_config->url_prefix = url_prefix;
@@ -284,20 +284,20 @@ void Session::ParseConfigFile(const std::string& filename, std::vector<RequestHa
     // Parse line to extract handler type, URL prefix, and directory path.
     // For example: "static /static1 ../static_files/static_base_directory_1"
     std::istringstream iss(line);
-    std::string handler_type, url_prefix, directory_path;
-    iss >> handler_type >> url_prefix >> directory_path;
-    log->LogDebug("handler type: " + handler_type);
+    std::string url_prefix, handler_type, directory_path;
+    iss >> url_prefix >> handler_type >> directory_path;
     log->LogDebug("url prefix: " + url_prefix);
+    log->LogDebug("handler type: " + handler_type);
     log->LogDebug("directory path: " + directory_path);
 
     // Create handler based on type.
-    if (handler_type == "static") {
+    if (handler_type == "StaticHandler") {
       StaticRequestHandler* srh = new StaticRequestHandler(url_prefix, directory_path);
       handlers.push_back(srh);
-    } else if (handler_type == "echo") {
+    } else if (handler_type == "EchoHandler") {
       EchoRequestHandler* erh = new EchoRequestHandler(url_prefix);
       handlers.push_back(erh);
-    } else if (handler_type == "none") {
+    } else if (handler_type == "None") {
       RequestHandler* rh = new RequestHandler(url_prefix);
       handlers.push_back(rh);
     } else {
