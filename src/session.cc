@@ -106,6 +106,7 @@ void Session::HandleRead(const boost::system::error_code& error,
     for (int i = 0; i < handlers.size(); i++) {
       delete handlers[i];
     }
+    parsed_configs.clear();
   } else { // request_found == false-- just write nothing to client so that we can read again to accumulate read_string_buffer_.
     boost::asio::async_write(socket_,
       boost::asio::buffer(std::string("")),
@@ -219,7 +220,7 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
     log->LogDebug("handler type: " + handler_type);
 
     // Set ParsedConfig struct.
-    ParsedConfig* parsed_config;
+    ParsedConfig* parsed_config = new ParsedConfig();
     if (handler_type == "StaticHandler") {
       parsed_config->handler_type = HandlerType::kStatic;
     } else if (handler_type == "EchoHandler") {
