@@ -61,3 +61,36 @@ std::string RequestHandler::ResponseToString(http::response<string_body> boost_r
   std::string response_string = oss.str();
   return response_string;
 }
+
+// Parse the request
+Status RequestHandler::ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) {
+  // Convert request to string format.
+  std::ostringstream oss;
+  oss << req;
+  std::string request_string = oss.str();
+
+  // Response Components.
+  std::string response_content_type;
+  std::string file_contents;
+
+  res.result(boost::beast::http::status::not_found); // 404 Not Found.
+  response_content_type = "text/plain";
+  file_contents = "404 Not Found. Error. The requested URL was not found on this server.";
+
+  // Check if connection keep alive demanded
+  bool keep_alive_request_exists = req.keep_alive();
+  if (keep_alive_request_exists == true) {
+    res.set(http::field::connection, "keep-alive");
+  } else {
+    res.set(http::field::connection, "close");
+  }
+
+  // Response headers and message body.
+  res.set(http::field::content_type, response_content_type);
+  res.body() = file_contents;
+  res.prepare_payload(); // Adjusts Content-Length and Transfer-Encoding field values based on body properties.
+
+  // Error Status return.
+  Status return_status = Status(0, "Status Message: Success");
+  return return_status;
+}

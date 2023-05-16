@@ -22,7 +22,7 @@ class RequestHandler {
  public:
   RequestHandler(std::string handled_directory_name);
 
-  virtual Status ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) = 0;
+  virtual Status ParseRequest(const http::request<string_body>& req, http::response<string_body>& res);
 
   static std::string GetNextToken(std::string str, std::string delimiter);
   static std::string GetRequestURL(std::string request_string);

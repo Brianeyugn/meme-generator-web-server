@@ -224,7 +224,7 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
       parsed_config->handler_type = HandlerType::kStatic;
     } else if (handler_type == "echo") {
       parsed_config->handler_type = HandlerType::kEcho;
-    } else {
+    } else if (handler_type == "none") {
       parsed_config->handler_type = HandlerType::kNone;
     }
     parsed_config->url_prefix = url_prefix;
@@ -262,6 +262,11 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ve
         handlers.push_back(erh);
         break;
       }
+      case HandlerType::kNone: {
+        RequestHandler* rh = new RequestHandler(parsed_config->url_prefix);
+        handlers.push_back(rh);
+        break;
+      }
       default: {
         // Invalid handler type specified in config file.
         log->LogWarn("Invalid handler type specified in config file: " + parsed_config->handler_type);
@@ -292,6 +297,9 @@ void Session::ParseConfigFile(const std::string& filename, std::vector<RequestHa
     } else if (handler_type == "echo") {
       EchoRequestHandler* erh = new EchoRequestHandler(url_prefix);
       handlers.push_back(erh);
+    } else if (handler_type == "none") {
+      RequestHandler* rh = new RequestHandler(url_prefix);
+      handlers.push_back(rh);
     } else {
       // Invalid handler type specified in config file.
       log->LogWarn("Invalid handler type specified in config file: " + handler_type);
