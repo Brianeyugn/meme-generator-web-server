@@ -9,6 +9,7 @@
 #include "echo_request_handler.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "request_factory.h"
 
 using boost::asio::ip::tcp;
 
@@ -37,9 +38,9 @@ class Session {
   void HandleWrite(const boost::system::error_code& error);
   void HandleWriteShutdown(const boost::system::error_code& error);
   std::string HandleRequest(std::string request_string, 
-      std::vector<RequestHandler*> handlers);
+      std::map<std::string, RequestHandlerFactory*>& routes);
   std::vector<ParsedConfig*> ParseConfigFile();
-  void CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::vector<RequestHandler*>& handlers);
+  void CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::map<std::string, RequestHandlerFactory*>& factories);
 
   // temporary overloading
   void ParseConfigFile(const std::string& filename, 

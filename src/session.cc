@@ -14,6 +14,7 @@
 #include "logging.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "request_factory.h"
 
 namespace http = boost::beast::http;
 using http::string_body;
@@ -68,20 +69,19 @@ void Session::HandleRead(const boost::system::error_code& error,
   }
 
   if (request_found) {
-    // Feed handlers to handler vector.
-    std::vector<RequestHandler*> handlers;
     // Parse config file and handle configs dynamically
     std::vector<ParsedConfig*> parsed_configs = ParseConfigFile();
-    CreateHandlers(parsed_configs, handlers);
+    std::map<std::string, RequestHandlerFactory*> routes;
+    CreateHandlers(parsed_configs, routes);
 
     // (DEBUG) Dump client request to Server console.
     log->LogDebug("Client requested: " + request_string);
 
     // Give request_string to handlers to produce response_string.
-    std::string response_string = HandleRequest(request_string, handlers);
-
+    std::string response_string = HandleRequest(request_string, routes);
+    log->LogDebug("response string: " + response_string);
     // (DEBUG) Dump response to Server console.
-    // cout << "8##" << response_string << "$$$" << endl;
+    // std::cout << "8##" << response_string << "$$$" << std::endl;
 
     // Bool value to determine if we should shutdown connection
     bool close_request_exists = false;
@@ -103,10 +103,10 @@ void Session::HandleRead(const boost::system::error_code& error,
         boost::asio::placeholders::error));
     }
     // Clean up memory.
-    for (int i = 0; i < handlers.size(); i++) {
-      delete handlers[i];
+    for (auto& parsed_config : parsed_configs) {
+      delete parsed_config;
     }
-    parsed_configs.clear();
+
   } else { // request_found == false-- just write nothing to client so that we can read again to accumulate read_string_buffer_.
     boost::asio::async_write(socket_,
       boost::asio::buffer(std::string("")),
@@ -158,7 +158,7 @@ void Session::HandleWriteShutdown(const boost::system::error_code& error) {
 // Given request string and vector of RequestHandler pointers.
 // Matches string with appropriate request handler.
 // Returns the response string.
-std::string Session::HandleRequest(std::string request_string, std::vector<RequestHandler*> handlers) {
+std::string Session::HandleRequest(std::string request_string, std::map<std::string, RequestHandlerFactory*>& routes) {
   Logger *log = Logger::GetLogger();
   log->LogDebug("Handling request");
 
@@ -168,38 +168,57 @@ std::string Session::HandleRequest(std::string request_string, std::vector<Reque
   // Boost response object.
   http::response<string_body> boost_response;
 
-  // temporarilly just let first handler handle-- will have to properly dispatch later.
-  handlers[0]->ParseRequest(boost_request, boost_response);
+  log->LogDebug("matching route location");
+  // Find matching route location
+  std::string longest_prefix = "";
+  std::string matching_location = "";
+  for (const auto& route : routes) {
+    const std::string& location = route.first;
+    log->LogDebug("route.first/location: " + location);
+    log->LogDebug("boost request: " + boost_request.target().to_string());
+    if (boost_request.target().to_string().find(location) == 0) {
+      if (location.length() > longest_prefix.length()) {
+        longest_prefix = location;
+      }
+      matching_location = location;
+    }
+  }
 
-  // Convert boost response object to string.
-  std::string response_string = RequestHandler::ResponseToString(boost_response);
+  log->LogDebug("checking if matching route is found");
+  // Check if matching route is found
+  if (!longest_prefix.empty()) {
+    log->LogDebug("matching location: " + matching_location);
 
-  return response_string;
+    RequestHandlerFactory* factory = routes[matching_location];
+    if (factory == nullptr) {
+      log->LogWarn("No handler found for URL: " + boost_request.target().to_string());
+      return "";
+    }
+    
+    if (matching_location.size() > 1) {
+      matching_location.erase(0,1);
+    }
+    RequestHandler* handler = factory->create(matching_location, boost_request.target().to_string());
 
-  /* // Old dispatching code
-	std::string response_string;
-	//RequestHandler* rh = new RequestHandler("", ""); // Default request handler (Always returns 404 NOT FOUND).
+    log->LogDebug("Serving request");
+    // Serve the request
+    handler->ParseRequest(boost_request, boost_response);
 
-	bool found_matching_handler = false;
-	for (int i = 0; i < handlers.size(); i++) {
-		handlers[i]->SetRequestString(request_string);
-		if (handlers[i]->IsMatchingHandler()) {
-      log->LogDebug("Found matching handler");
-			found_matching_handler = true;
-			handlers[i]->ParseRequest(); // Polymorphic call to obtain response_string.
-			response_string = handlers[i]->GetResponseString_();
-		}
-	}
-	if (!found_matching_handler) { // Let default handler handle if no matching handler found.
-    log->LogDebug("No matching handler found, using default");
-		rh->SetRequestString(request_string);
-		rh->ParseRequest();
-		response_string = rh->GetResponseString_();
-	}
+    log->LogDebug("Converting boost response object to string");
+    // Convert boost response object to string
+    std::string response_string = RequestHandler::ResponseToString(boost_response);
 
-	// Clean up memory.
-	delete rh;
-  */
+    log->LogDebug("HandleRequest finished");
+    // Cleanup
+    delete handler;
+
+    return response_string;
+  } else {
+    // No matching route found
+    log->LogWarn("No matching route found for URL: " + boost_request.target().to_string());
+    // TODO: return appropriate error response
+    return "";
+  }
 }
 
 std::vector<ParsedConfig*> Session::ParseConfigFile() {
@@ -237,7 +256,7 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
   return parsed_configs;
 }
 
-void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::vector<RequestHandler*>& handlers) {
+void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::map<std::string, RequestHandlerFactory*>& routes) {
   Logger *log = Logger::GetLogger();
   std::string directory_path;
   // Create handler based on type.
@@ -254,18 +273,24 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ve
       }
 
       log->LogDebug("directory path: " + directory_path);
-      StaticRequestHandler* srh = new StaticRequestHandler(parsed_config->url_prefix, directory_path);
-      handlers.push_back(srh);
+      RequestHandlerFactory* factory = new StaticRequestHandlerFactory(directory_path);
+      log->LogDebug("pushing static handler");
+      log->LogDebug("url prefix: " + parsed_config->url_prefix);
+      routes["/" + parsed_config->url_prefix] = factory;
       break;
       }
       case HandlerType::kEcho: {
-        EchoRequestHandler* erh = new EchoRequestHandler(parsed_config->url_prefix);
-        handlers.push_back(erh);
+        RequestHandlerFactory* factory = new EchoRequestHandlerFactory();
+        log->LogDebug("pushing echo handler");
+        log->LogDebug("url prefix: " + parsed_config->url_prefix);
+        routes["/" + parsed_config->url_prefix] = factory;
         break;
       }
       case HandlerType::kNone: {
-        RequestHandler* rh = new RequestHandler(parsed_config->url_prefix);
-        handlers.push_back(rh);
+        // Can't instantiate abstract object
+        // RequestHandlerFactory* factory = new RequestHandlerFactory();
+        log->LogDebug("pushing non handler");
+        routes[parsed_config->url_prefix] = nullptr;
         break;
       }
       default: {

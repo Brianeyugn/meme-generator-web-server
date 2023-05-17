@@ -29,6 +29,7 @@ class RequestHandler {
   static bool ContainsSubstring(const std::string&, const std::string& substr);
   static http::request<string_body> StringToRequest(std::string request_string);
   static std::string ResponseToString(http::response<string_body> boost_response);
+  std::string GetPrefix();
  protected:
   std::string handled_directory_name_;
 };

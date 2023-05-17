@@ -42,13 +42,32 @@ http::request<http::string_body> RequestHandler::StringToRequest(std::string req
   http::request_parser<http::string_body> parser;
 
   // Parse headers.
-  boost::asio::const_buffer buffer = boost::asio::buffer(request_string);
-  std::size_t bytes_parsed = parser.put(buffer, error);
+  boost::asio::const_buffer headers_buffer = boost::asio::buffer(request_string.data(), request_string.size());
+  std::size_t bytes_parsed = parser.put(headers_buffer, error);
+  if (error)
+  {
+    // Handle parsing error
+    throw std::runtime_error("Failed to parse request headers: " + error.message());
+  }
 
-  // Parse body.
-  buffer += bytes_parsed;
-  bytes_parsed = parser.put(buffer, error);
+  // Parse body if available.
+  if (bytes_parsed < request_string.size())
+  {
+    boost::asio::const_buffer body_buffer = boost::asio::buffer(request_string.data() + bytes_parsed, request_string.size() - bytes_parsed);
+    parser.put(body_buffer, error);
+    if (error)
+    {
+      // Handle parsing error
+      throw std::runtime_error("Failed to parse request body: " + error.message());
+    }
+  }
+
   parser.put_eof(error);
+  if (error)
+  {
+    // Handle parsing error
+    throw std::runtime_error("Failed to parse request EOF: " + error.message());
+  }
 
   return parser.release();
 }
@@ -60,6 +79,11 @@ std::string RequestHandler::ResponseToString(http::response<string_body> boost_r
   oss << boost_response;
   std::string response_string = oss.str();
   return response_string;
+}
+
+// Get prefix
+std::string RequestHandler::GetPrefix() {
+  return handled_directory_name_;
 }
 
 // Parse the request
