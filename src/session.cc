@@ -161,32 +161,55 @@ void Session::HandleWriteShutdown(const boost::system::error_code& error) {
 std::string Session::HandleRequest(std::string request_string, std::map<std::string, RequestHandlerFactory*>& routes) {
   Logger *log = Logger::GetLogger();
   log->LogDebug("Handling request");
-
+  log->LogDebug("Request: " + request_string);
   // Convert request_string to boost request object.
   http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
 
   // Boost response object.
   http::response<string_body> boost_response;
 
-  log->LogDebug("matching route location");
   // Find matching route location
-  std::string longest_prefix = "";
+  // std::string longest_prefix = "";
+  // std::string matching_location = "";
+  // for (const auto& route : routes) {
+  //   const std::string& location = route.first;
+  //   log->LogDebug("route.first/location: " + location);
+  //   log->LogDebug("boost request: " + boost_request.target().to_string());
+  //   if (boost_request.target().to_string().find(location) == 0) {
+  //     if (location.length() > longest_prefix.length()) {
+  //       longest_prefix = location;
+  //     }
+  //     matching_location = location;
+  //   }
+  // }
+
   std::string matching_location = "";
+  std::size_t longest_match_length = 0;
+
   for (const auto& route : routes) {
     const std::string& location = route.first;
+    const std::string request_target = boost_request.target().to_string();
     log->LogDebug("route.first/location: " + location);
-    log->LogDebug("boost request: " + boost_request.target().to_string());
-    if (boost_request.target().to_string().find(location) == 0) {
-      if (location.length() > longest_prefix.length()) {
-        longest_prefix = location;
+    log->LogDebug("request target: " + request_target);
+
+    if (location[0] != '/')
+    {
+      if (RequestHandler::ContainsSubstring(request_target, location) != false && location.length() > longest_match_length) {
+        longest_match_length = location.length();
+        matching_location = location;
+        log->LogDebug("matching location: " + matching_location);
       }
-      matching_location = location;
     }
+  }
+
+  // Remove the leading '/' if present in matching_location
+  if (!matching_location.empty() && matching_location[0] == '/') {
+    matching_location.erase(0, 1);
   }
 
   log->LogDebug("checking if matching route is found");
   // Check if matching route is found
-  if (!longest_prefix.empty()) {
+  if (matching_location.size() > 1) {
     log->LogDebug("matching location: " + matching_location);
 
     RequestHandlerFactory* factory = routes[matching_location];
@@ -276,14 +299,14 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ma
       RequestHandlerFactory* factory = new StaticRequestHandlerFactory(directory_path);
       log->LogDebug("pushing static handler");
       log->LogDebug("url prefix: " + parsed_config->url_prefix);
-      routes["/" + parsed_config->url_prefix] = factory;
+      routes[parsed_config->url_prefix] = factory;
       break;
       }
       case HandlerType::kEcho: {
         RequestHandlerFactory* factory = new EchoRequestHandlerFactory();
         log->LogDebug("pushing echo handler");
         log->LogDebug("url prefix: " + parsed_config->url_prefix);
-        routes["/" + parsed_config->url_prefix] = factory;
+        routes[parsed_config->url_prefix] = factory;
         break;
       }
       case HandlerType::kNone: {
