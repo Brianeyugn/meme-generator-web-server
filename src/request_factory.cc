@@ -8,13 +8,13 @@ RequestHandler* RequestHandlerFactory::create(const std::string& location, const
   return nullptr;
 }
 
-RequestHandler* StaticRequestHandlerFactory::create(const std::string& location, const std::string& url) {
+StaticRequestHandler* StaticRequestHandlerFactory::create(const std::string& location, const std::string& url) {
   // Create and return a StaticRequestHandler instance
   // Pass necessary arguments to constructor
-  return new StaticRequestHandler(location, this->url);
+  return new StaticRequestHandler(location, url);
 }
 
-RequestHandler* EchoRequestHandlerFactory::create(const std::string& location, const std::string& url) {
+EchoRequestHandler* EchoRequestHandlerFactory::create(const std::string& location, const std::string& url) {
   // Create and return an EchoRequestHandler instance
   // Pass necessary arguments to constructor
   return new EchoRequestHandler(location);

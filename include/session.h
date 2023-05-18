@@ -37,7 +37,7 @@ class Session {
       std::size_t bytes_transferred);
   void HandleWrite(const boost::system::error_code& error);
   void HandleWriteShutdown(const boost::system::error_code& error);
-  std::string HandleRequest(std::string request_string, 
+  std::string HandleRequest(const std::string request_string, 
       std::map<std::string, RequestHandlerFactory*>& routes);
   std::vector<ParsedConfig*> ParseConfigFile();
   void CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::map<std::string, RequestHandlerFactory*>& factories);

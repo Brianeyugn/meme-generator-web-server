@@ -158,37 +158,26 @@ void Session::HandleWriteShutdown(const boost::system::error_code& error) {
 // Given request string and vector of RequestHandler pointers.
 // Matches string with appropriate request handler.
 // Returns the response string.
-std::string Session::HandleRequest(std::string request_string, std::map<std::string, RequestHandlerFactory*>& routes) {
+std::string Session::HandleRequest(const std::string request_string, std::map<std::string, RequestHandlerFactory*>& routes) {
   Logger *log = Logger::GetLogger();
   log->LogDebug("Handling request");
   log->LogDebug("Request: " + request_string);
   // Convert request_string to boost request object.
   http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
+  std::string request_target = boost_request.target().to_string();
+  // TODO: check parsing for boost_request
+  request_target.insert(0, "GET ");
+  request_target += " HTTP/1.1\r\n";
+  log->LogDebug("Request target: " + request_target);
 
   // Boost response object.
   http::response<string_body> boost_response;
-
-  // Find matching route location
-  // std::string longest_prefix = "";
-  // std::string matching_location = "";
-  // for (const auto& route : routes) {
-  //   const std::string& location = route.first;
-  //   log->LogDebug("route.first/location: " + location);
-  //   log->LogDebug("boost request: " + boost_request.target().to_string());
-  //   if (boost_request.target().to_string().find(location) == 0) {
-  //     if (location.length() > longest_prefix.length()) {
-  //       longest_prefix = location;
-  //     }
-  //     matching_location = location;
-  //   }
-  // }
 
   std::string matching_location = "";
   std::size_t longest_match_length = 0;
 
   for (const auto& route : routes) {
     const std::string& location = route.first;
-    const std::string request_target = boost_request.target().to_string();
     log->LogDebug("route.first/location: " + location);
     log->LogDebug("request target: " + request_target);
 
@@ -221,7 +210,10 @@ std::string Session::HandleRequest(std::string request_string, std::map<std::str
     if (matching_location.size() > 1) {
       matching_location.erase(0,1);
     }
-    RequestHandler* handler = factory->create(matching_location, boost_request.target().to_string());
+
+    boost_request = RequestHandler::StringToRequest(request_target);
+    // TODO : second parameter of create needs to work dynamically
+    RequestHandler* handler = factory->create(matching_location, "../static_files/static_base_directory_1");
 
     log->LogDebug("Serving request");
     // Serve the request
@@ -296,7 +288,7 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ma
       }
 
       log->LogDebug("directory path: " + directory_path);
-      RequestHandlerFactory* factory = new StaticRequestHandlerFactory(directory_path);
+      RequestHandlerFactory* factory = new StaticRequestHandlerFactory();
       log->LogDebug("pushing static handler");
       log->LogDebug("url prefix: " + parsed_config->url_prefix);
       routes[parsed_config->url_prefix] = factory;
