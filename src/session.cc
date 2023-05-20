@@ -14,6 +14,7 @@
 #include "logging.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "api_request_handler.h"
 #include "request_factory.h"
 
 namespace http = boost::beast::http;
@@ -166,7 +167,12 @@ std::string Session::HandleRequest(const std::string request_string, std::map<st
   http::request<string_body> boost_request = RequestHandler::StringToRequest(request_string);
   std::string request_target = boost_request.target().to_string();
   // TODO: check parsing for boost_request
-  request_target.insert(0, "GET ");
+  
+  // extract the HTTP method from the request string to prepend to `request_target`
+  size_t first_space_position = request_string.find_first_of(" ");
+  std::string request_method = request_string.substr(0, first_space_position);
+  std::string method_to_insert = request_method + " ";
+  request_target.insert(0, method_to_insert);
   request_target += " HTTP/1.1\r\n";
   log->LogDebug("Request target: " + request_target);
 
@@ -261,6 +267,8 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
       parsed_config->handler_type = HandlerType::kEcho;
     } else if (handler_type == "None") {
       parsed_config->handler_type = HandlerType::kNone;
+    } else if (handler_type == "ApiHandler") {
+      parsed_config->handler_type = HandlerType::kApi;
     }
     parsed_config->url_prefix = url_prefix;
     parsed_config->statement = statement;
@@ -273,26 +281,42 @@ std::vector<ParsedConfig*> Session::ParseConfigFile() {
 
 void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::map<std::string, RequestHandlerFactory*>& routes) {
   Logger *log = Logger::GetLogger();
-  std::string directory_path;
+  std::string directory_path, data_path;
   // Create handler based on type.
   for (ParsedConfig* parsed_config : parsed_configs) {
     switch (parsed_config->handler_type)
     {
       case HandlerType::kStatic: {
-      for (auto child_statement : parsed_config->statement->child_block_.get()->statements_) {
-        if (child_statement.get()->tokens_[0] != "root") {
-          continue;
+        for (auto child_statement : parsed_config->statement->child_block_.get()->statements_) {
+          if (child_statement.get()->tokens_[0] != "root") {
+            continue;
+          }
+
+          directory_path = child_statement.get()->tokens_[1];
         }
 
-        directory_path = child_statement.get()->tokens_[1];
-      }
+        log->LogDebug("directory path: " + directory_path);
+        RequestHandlerFactory* factory = new StaticRequestHandlerFactory();
+        log->LogDebug("pushing static handler");
+        log->LogDebug("url prefix: " + parsed_config->url_prefix);
+        routes[parsed_config->url_prefix] = factory;
+        break;
+        }
+      case HandlerType::kApi: {
+        for (auto child_statement : parsed_config->statement->child_block_.get()->statements_) {
+          if (child_statement.get()->tokens_[0] != "data_path") {
+            continue;
+          }
 
-      log->LogDebug("directory path: " + directory_path);
-      RequestHandlerFactory* factory = new StaticRequestHandlerFactory();
-      log->LogDebug("pushing static handler");
-      log->LogDebug("url prefix: " + parsed_config->url_prefix);
-      routes[parsed_config->url_prefix] = factory;
-      break;
+          data_path = child_statement.get()->tokens_[1];
+        }
+
+        log->LogDebug("data path: " + directory_path);
+        RequestHandlerFactory* factory = new ApiRequestHandlerFactory();
+        log->LogDebug("pushing api handler");
+        log->LogDebug("url prefix: " + parsed_config->url_prefix);
+        routes[parsed_config->url_prefix] = factory;
+        break;
       }
       case HandlerType::kEcho: {
         RequestHandlerFactory* factory = new EchoRequestHandlerFactory();

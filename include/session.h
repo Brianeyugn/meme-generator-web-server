@@ -9,6 +9,7 @@
 #include "echo_request_handler.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "api_request_handler.h"
 #include "request_factory.h"
 
 using boost::asio::ip::tcp;
@@ -17,6 +18,7 @@ enum HandlerType {
   kStatic = 0,
   kEcho,
   kNone,
+  kApi,
 };
 
 struct ParsedConfig {
