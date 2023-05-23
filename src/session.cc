@@ -219,7 +219,9 @@ std::string Session::HandleRequest(const std::string request_string, std::map<st
 
     boost_request = RequestHandler::StringToRequest(request_target);
     // TODO : second parameter of create needs to work dynamically
-    RequestHandler* handler = factory->create(matching_location, "../static_files/static_base_directory_1");
+    // TODO: aaron do something with file_to_id here
+    std::map<std::string, std::vector<int>> file_to_id;
+    RequestHandler* handler = factory->create(matching_location, "../static_files/static_base_directory_1", file_to_id);
 
     log->LogDebug("Serving request");
     // Serve the request

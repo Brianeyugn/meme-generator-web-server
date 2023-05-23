@@ -2,6 +2,7 @@
 #define GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_
 
 #include <string>
+#include <map>
 
 #include <boost/beast/http.hpp>
 

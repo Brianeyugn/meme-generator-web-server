@@ -90,6 +90,9 @@ target_link_libraries(request_handler_test request_handler_lib gtest_main)
 target_link_libraries(echo_request_handler_test echo_request_handler_lib gtest_main)
 target_link_libraries(static_request_handler_test static_request_handler_lib gtest_main)
 target_link_libraries(logging_test logging_lib gtest_main)
+add_executable(api_request_test tests/api_request_test.cc)
+target_link_libraries(api_request_test logging_lib gtest_main Boost::filesystem Boost::log_setup Boost::log Boost::system)
+
 
 # Test binaries
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -101,6 +104,7 @@ gtest_discover_tests(request_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOUR
 gtest_discover_tests(echo_request_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(static_request_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(logging_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(api_request_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 #add_test(NAME integration_tests COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests.sh)
 
 include(cmake/CodeCoverageReportConfig.cmake)
@@ -108,5 +112,5 @@ generate_coverage_report(
     TARGETS
         session_lib server_lib config_parser_lib echo_request_handler_lib static_request_handler_lib request_handler_lib logging_lib
     TESTS
-        server_test session_test config_parser_test config_statement_test config_test request_handler_test echo_request_handler_test static_request_handler_test logging_test
+        server_test session_test config_parser_test config_statement_test config_test request_handler_test echo_request_handler_test static_request_handler_test logging_test api_reuqest_test
 )
