@@ -216,8 +216,15 @@ std::string Session::HandleRequest(const std::string request_string, std::map<st
     if (matching_location.size() > 1) {
       matching_location.erase(0,1);
     }
-
+    // TODO: can't really properly test or implement CRUD
+    //       due to errors present in codebase (such as below)
+    // request body not present
+    // request overall badly-formed
     boost_request = RequestHandler::StringToRequest(request_target);
+    std::ostringstream oss;
+    oss << "BOOST BOOST BOOST:\n" << boost_request << "\n";
+    log->LogDebug(oss.str());
+    oss.clear();
     // TODO : second parameter of create needs to work dynamically
     // TODO: also third parameter ^
     std::map<std::string, std::vector<int>> file_to_id;

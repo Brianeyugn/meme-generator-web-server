@@ -119,6 +119,25 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
     req_method_int = 4;
   }
 
+  log->LogDebug("looking at file_to_id_");
+  std::vector<std::string> keys;
+  std::vector<std::vector<int>> values;
+
+  for(auto const& imap: file_to_id_) {
+    keys.push_back(imap.first);
+    values.push_back(imap.second);
+  }
+
+  for (auto& k : keys) {
+    log->LogDebug("key: " + k);
+  }
+
+  for (auto& v : values) {
+    for (auto& value : v) {
+      log->LogDebug("value: " + value);
+    }
+  }
+
   switch (req_method_int) {
     // TODO: do proper checking and ensure requests are well-formed
     case 1: { // GET
@@ -126,6 +145,18 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       std::string prefix = "/" + request_prefix + "/";
       std::string target = request_entity;
       std::string path = data_path_ + "/" + request_entity;
+      log->LogError("CRUD GET request: path = " + path);
+      std::string request_id = GetID_(request_url);
+      log->LogDebug("Request id: " + request_id);
+
+      std::string action;
+      int numeric_id;
+      if (boost::conversion::try_lexical_convert<int>(request_id, numeric_id)) {
+        action = "retrieve";
+      } else {
+        action = "list";
+      }
+
       if (!(boost::filesystem::exists(path))) { // GET failure due to path not found
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");
@@ -136,7 +167,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
         Status return_status = Status(1, "Status Message: Fail");
         return return_status;
       }
-      if (boost::filesystem::is_directory(path)) { // GET success
+      if (action == "list") { // GET success
         log->LogError("CRUD GET request: path is found");
         std::size_t found = target.find_last_of("/");
         std::string key = target.substr(0,found);
@@ -156,7 +187,9 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
         // return false;
         Status return_status = Status(0, "Status Message: Success");
         return return_status;
-      } else { // GET success
+      } else { // GET success (FOR RETRIEVE)
+        path += "/" + request_id;
+        log->LogError("CRUD GET request: retrieve path = " + path);
         std::ifstream file(path, std::ios::binary);
         // read from file
         if (file.good()) {
@@ -232,17 +265,16 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
             }
           }
           file_to_id_[key].push_back(lowest_available_id);
-          std::vector<int> values_copy = file_to_id_[key];
-          std::sort(values_copy.begin(), values_copy.end());
-          file_to_id_[key] = values_copy;
+          std::sort(file_to_id_[key].begin(), file_to_id_[key].end());
           value = lowest_available_id;
         }
         std::ostringstream oss;
         oss << req.body();
+        log->LogDebug(req.body());
         std::string body = oss.str();
         oss.clear();
         std::ofstream file(path + "/" + std::to_string(value));
-        file << body;
+        file << "test";
         file.close();
         log->LogInfo("Created id " + std::to_string(value) + " for entity " + key + "\n");
         //prepare response
@@ -362,7 +394,10 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       log->LogDebug("Received DELETE request");
       std::string prefix = "/" + request_prefix + "/";
       std::string target = request_entity;
-      std::string path_str = data_path_ + "/" + request_entity;
+      std::string id = GetID_(request_url);
+      log->LogDebug("Request ID: " + id);
+      std::string path_str = data_path_ + "/" + request_entity + "/" + id;
+      log->LogDebug("CRUD DELETE request path_str: " + path_str);
       if (!(boost::filesystem::exists(path_str))) {
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");
