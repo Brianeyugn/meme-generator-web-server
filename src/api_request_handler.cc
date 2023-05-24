@@ -125,7 +125,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       log->LogDebug("Received GET request");
       std::string prefix = "/" + request_prefix + "/";
       std::string target = request_entity;
-      std::string path = request_url;
+      std::string path = data_path_ + "/" + request_entity;
       if (!(boost::filesystem::exists(path))) { // GET failure due to path not found
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");
@@ -195,7 +195,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       if (pos != std::string::npos && pos == 0 && req.target().length() > prefix.length()) {
         log->LogDebug("CRUD POST request: path is valid");
         std::string key = request_entity;
-        std::string path = GetURL_(request_string);
+        std::string path = data_path_ + "/" + request_entity;
         int value;
         //remove trailing slash
         while(path.length() >= 1 && path[path.length()-1]=='/') {
@@ -264,7 +264,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
     } 
     case 3: { // PUT
       log->LogDebug("Received PUT request");
-      std::string prefix = GetPrefix() + "/";
+      std::string prefix = "/" + request_prefix + "/";
       size_t pos = req.target().find(prefix);
       //if the given location is found, url starts with crud location,
       //and the string of location is smaller than the url, this is a valid path
@@ -362,7 +362,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       log->LogDebug("Received DELETE request");
       std::string prefix = "/" + request_prefix + "/";
       std::string target = request_entity;
-      std::string path_str = GetURL_(request_string);
+      std::string path_str = data_path_ + "/" + request_entity;
       if (!(boost::filesystem::exists(path_str))) {
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");
