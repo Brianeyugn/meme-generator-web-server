@@ -331,6 +331,15 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       std::string prefix = GetPrefix() + "/";
       std::string target = std::string(req.target().substr(prefix.length()));
       std::string path_str = GetURL_(request_string) + "/" + target;
+      if (!(boost::filesystem::exists(path_str))) {
+        res.result(http::status::not_found);
+        res.set(http::field::content_type, "text/plain");
+        res.body() = "No file found at /" + target + "." + "\n";
+        res.prepare_payload();
+        log->LogError("File not found.");
+        Status return_status = Status(1, "Status Message: Fail");
+        return return_status;
+      }
       if (boost::filesystem::is_directory(path_str)) { // DELETE fail
         res.result(http::status::bad_request);
         res.set(http::field::content_type, "text/plain");
@@ -360,44 +369,42 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
 
       log->LogWarn("Incoming CRUD request to delete file: /" + target);
       const char* path = path_str.c_str();
-      if (boost::filesystem::exists(path_str)) { // DELETE success
-        if (file_to_id_.find(key) != file_to_id_.end()) {
-          if (std::remove(path) == 0) {
-            // Remove value from file:id mapping
-            file_to_id_[key].erase(std::remove(file_to_id_[key].begin(), file_to_id_[key].end(), value), file_to_id_[key].end());
-            res.result(http::status::ok);
-            res.set(http::field::content_type, "text/plain");
-            res.body() = "Successfully deleted file at /" + target + "." + "\n";
-            res.prepare_payload();
-            log->LogInfo("Successfully deleted file at /" + target);
-            // return true;
-            Status return_status = Status(0, "Status Message: Success");
-            return return_status;
-          } else {
-            res.result(http::status::internal_server_error);
-            res.set(http::field::content_type, "text/plain");
-            res.body() = "Error deleting file at /" + target + "." + "\n";
-            log->LogError("CRUD request to delete file at /" + target + " failed");
-          }
+      if (file_to_id_.find(key) != file_to_id_.end()) {
+        if (std::remove(path) == 0) {
+          // Remove value from file:id mapping
+          file_to_id_[key].erase(std::remove(file_to_id_[key].begin(), file_to_id_[key].end(), value), file_to_id_[key].end());
+          res.result(http::status::ok);
+          res.set(http::field::content_type, "text/plain");
+          res.body() = "Successfully deleted file at /" + target + "." + "\n";
+          res.prepare_payload();
+          log->LogInfo("Successfully deleted file at /" + target);
+          Status return_status = Status(0, "Status Message: Success");
+          return return_status;
         } else {
           res.result(http::status::internal_server_error);
           res.set(http::field::content_type, "text/plain");
-          res.body() = "Could not find file ID for /" + target + "." + "\n";
-          log->LogError("CRUD request to delete file at /" + target + " failed; no file ID");
+          res.body() = "Error while deleting file at /" + target + "." + "\n";
+          log->LogError("CRUD request to delete file at /" + target + " failed;");
         }
       } else {
-        res.result(http::status::not_found);
+        res.result(http::status::internal_server_error);
         res.set(http::field::content_type, "text/plain");
-        res.body() = "No file found at /" + key + "." + "\n";
-        log->LogError("File not found.");
+        res.body() = "Could not find ID at /" + target + "." + "\n";
+        log->LogError("CRUD request to delete file at /" + target + " failed; no file ID");
       }
       res.prepare_payload();
       // return false;
       Status return_status = Status(1, "Status Message: Fail");
       return return_status;
+      break;
     }
     default: {
-      log->LogError("Invalid request method");
+      res.result(http::status::bad_request);
+      res.set(http::field::content_type, "text/plain");
+      res.body() = "Invalid CRUD method.\n";
+      res.prepare_payload();
+      Status return_status = Status(1, "Status Message: Fail");
+      return return_status;
     }
   }
   
