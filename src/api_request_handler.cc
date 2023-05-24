@@ -13,10 +13,10 @@
 #include <boost/algorithm/string.hpp>
 
 namespace http = boost::beast::http;
-using http::string_body;
+using http::string_body;  
 
-ApiRequestHandler::ApiRequestHandler(std::string handled_directory_name, std::string base_directory_path,  std::map<std::string, std::vector<int>>& file_to_id)
-  : RequestHandler(handled_directory_name), base_directory_path_(base_directory_path), file_to_id_(file_to_id_) {
+ApiRequestHandler::ApiRequestHandler(std::string handled_directory_name, std::string base_directory_path,  std::string data_path, std::map<std::string, std::vector<int>>& file_to_id)
+  : RequestHandler(handled_directory_name), base_directory_path_(base_directory_path), data_path_(data_path), file_to_id_(file_to_id) {
     Logger *log = Logger::GetLogger();
   }
 
@@ -54,6 +54,14 @@ static std::string GetID_(std::string request_url) {
   return request_id;
 }
 
+static std::string GetPrefix_(std::string request_url) {
+  size_t first_path_position = request_url.find_first_of("/");
+  std::string without_first_slash = request_url.substr(first_path_position + 1);
+  size_t second_path_position = without_first_slash.find_first_of("/");
+  std::string request_prefix = without_first_slash.substr(0, second_path_position);
+  return request_prefix;
+}
+
 static std::string GetContentType_(std::string extension) {
   std::map <std::string, std::string> extension_to_content_type{
     {".html", "text/html"},
@@ -75,20 +83,30 @@ static std::string GetContentType_(std::string extension) {
 Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, http::response<string_body>& res) {  // Overide parent ParseRequest();
   Logger *log = Logger::GetLogger();
   log->LogDebug("Starting to parse Api request");
+
   // Convert request to string format.
   std::ostringstream oss;
   oss << req;
   std::string request_string = oss.str();
+
+  // Example: POST /api/Shoes HTTP/1.1
   log->LogDebug("Request string: " + request_string);
 
+  // Example: POST
   std::string request_method = GetMethod_(request_string);
   log->LogDebug("Request method: " + request_method);
 
+  // Example: /api/Shoes
   std::string request_url = GetURL_(request_string);
   log->LogDebug("Request URL: " + request_url);
 
+  // Example: Shoes
   std::string request_entity = GetEntity_(request_url);
   log->LogDebug("Request entity: " + request_entity);
+
+  // Example: api
+  std::string request_prefix = GetPrefix_(request_url);
+  log->LogDebug("Request prefix: " + request_prefix);
 
   int req_method_int = 0;
   if (request_method == "GET") {
@@ -104,9 +122,10 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
   switch (req_method_int) {
     // TODO: do proper checking and ensure requests are well-formed
     case 1: { // GET
-      std::string prefix = GetPrefix() + "/";
-      std::string target = std::string(req.target().substr(prefix.length()));
-      std::string path = GetURL_(request_string) + "/" + target;
+      log->LogDebug("Received GET request");
+      std::string prefix = "/" + request_prefix + "/";
+      std::string target = request_entity;
+      std::string path = request_url;
       if (!(boost::filesystem::exists(path))) { // GET failure due to path not found
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");
@@ -118,8 +137,10 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
         return return_status;
       }
       if (boost::filesystem::is_directory(path)) { // GET success
+        log->LogError("CRUD GET request: path is found");
         std::size_t found = target.find_last_of("/");
         std::string key = target.substr(0,found);
+        // std::string key = request_entity;
         std::vector<int> ids = file_to_id_[key];
         std::vector<std::string> ids_str;
         // Convert ID vector of type int to type string
@@ -161,13 +182,20 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       }
     } 
     case 2: { // POST
-      std::string prefix = GetPrefix() + "/";
+      log->LogDebug("Received POST request");
+      std::string prefix = "/" + request_prefix + "/";
       size_t pos = req.target().find(prefix);
+      // std::ostringstream oss;
+      // oss << pos;
+      // log->LogDebug("Req Target: " + std::string{req.target()});
+      // log->LogDebug("Prefix: " + prefix);
+      // log->LogDebug("Pos: " + oss.str());
       //if the given location is found, url starts with crud location,
       //and the string of location is smaller than the url, this is a valid path
       if (pos != std::string::npos && pos == 0 && req.target().length() > prefix.length()) {
-        std::string key = std::string(req.target().substr(prefix.length()));
-        std::string path = GetURL_(request_string) + "/" + key;
+        log->LogDebug("CRUD POST request: path is valid");
+        std::string key = request_entity;
+        std::string path = GetURL_(request_string);
         int value;
         //remove trailing slash
         while(path.length() >= 1 && path[path.length()-1]=='/') {
@@ -175,6 +203,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
         }
         //if entity does not exist yet
         if (file_to_id_.find(key) == file_to_id_.end()) {
+          log->LogDebug("CRUD POST request: entity doesn't exist");
           try {
             boost::filesystem::create_directory(path);
           }
@@ -194,6 +223,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
           value = 1;
           log->LogInfo("Created directory for new entity: " + key + "\n");
         } else { // if entity already exists
+          log->LogDebug("CRUD POST request: entity already exists");
           int lowest_available_id = 1;
           //finds the lowest available id
           for (int i = 0; i < file_to_id_[key].size(); i++) {
@@ -233,6 +263,7 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
       return return_status;
     } 
     case 3: { // PUT
+      log->LogDebug("Received PUT request");
       std::string prefix = GetPrefix() + "/";
       size_t pos = req.target().find(prefix);
       //if the given location is found, url starts with crud location,
@@ -328,9 +359,10 @@ Status ApiRequestHandler::ParseRequest(const http::request<string_body>& req, ht
     return return_status;
     } 
     case 4: { // DELETE
-      std::string prefix = GetPrefix() + "/";
-      std::string target = std::string(req.target().substr(prefix.length()));
-      std::string path_str = GetURL_(request_string) + "/" + target;
+      log->LogDebug("Received DELETE request");
+      std::string prefix = "/" + request_prefix + "/";
+      std::string target = request_entity;
+      std::string path_str = GetURL_(request_string);
       if (!(boost::filesystem::exists(path_str))) {
         res.result(http::status::not_found);
         res.set(http::field::content_type, "text/plain");

@@ -219,9 +219,9 @@ std::string Session::HandleRequest(const std::string request_string, std::map<st
 
     boost_request = RequestHandler::StringToRequest(request_target);
     // TODO : second parameter of create needs to work dynamically
-    // TODO: aaron do something with file_to_id here
+    // TODO: also third parameter ^
     std::map<std::string, std::vector<int>> file_to_id;
-    RequestHandler* handler = factory->create(matching_location, "../static_files/static_base_directory_1", file_to_id);
+    RequestHandler* handler = factory->create(matching_location, "../static_files/static_base_directory_1", "../mnt/crud", file_to_id);
 
     log->LogDebug("Serving request");
     // Serve the request
@@ -313,7 +313,7 @@ void Session::CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::ma
           data_path = child_statement.get()->tokens_[1];
         }
 
-        log->LogDebug("data path: " + directory_path);
+        log->LogDebug("data path: " + data_path);
         RequestHandlerFactory* factory = new ApiRequestHandlerFactory();
         log->LogDebug("pushing api handler");
         log->LogDebug("url prefix: " + parsed_config->url_prefix);

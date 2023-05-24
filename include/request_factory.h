@@ -12,24 +12,24 @@
 
 class RequestHandlerFactory {
 public:
-  virtual RequestHandler* create(const std::string& location, const std::string& url, std::map<std::string, std::vector<int>>& file_to_id);
+  virtual RequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id);
    
 };
 
 class StaticRequestHandlerFactory : public RequestHandlerFactory {
 public:
-  StaticRequestHandler* create(const std::string& location, const std::string& url, std::map<std::string, std::vector<int>>& file_to_id) override;
+  StaticRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
 private:
 };
 
 class EchoRequestHandlerFactory : public RequestHandlerFactory {
 public:
-  EchoRequestHandler* create(const std::string& location, const std::string& url, std::map<std::string, std::vector<int>>& file_to_id) override;
+  EchoRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
 };
 
 class ApiRequestHandlerFactory : public RequestHandlerFactory {
 public:
-  ApiRequestHandler* create(const std::string& location, const std::string& url, std::map<std::string, std::vector<int>>& file_to_id) override;
+  ApiRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
   // ApiRequestHandler* create(const std::string& location, const std::string& url) override;
 private:
   std::map<std::string, std::vector<int>> file_to_id;

@@ -1,4 +1,5 @@
 #include "request_handler.h"
+#include "logging.h"
 
 #include <sstream>
 #include <string>
