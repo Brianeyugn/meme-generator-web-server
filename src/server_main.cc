@@ -44,10 +44,18 @@ int main(int argc, char* argv[]) {
     int server_port = config.GetPort();
 
     boost::asio::io_service io_service;
+
+    std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map;
+    config.populateHandlerMap(handler_map);
+    // std::map<std::string, std::pair<std::string, NginxConfig*>>::iterator it;
+    // for (it = handler_map.begin(), it != handler_map.end(), it++) {
+
+    // }
     
     // For testing-- via commandline-- can also use:
     // Server s(io_service, std::atoi(argv[1]));
-    Server s(io_service, server_port, config);
+    Server s(io_service, server_port, handler_map);
+    s.StartAccept();
     io_service.run();
 
     log->LogInfo("Stopping Server");

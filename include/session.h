@@ -11,57 +11,50 @@
 #include "static_request_handler.h"
 #include "api_request_handler.h"
 #include "request_factory.h"
+#include "http_parser.h"
 
 using boost::asio::ip::tcp;
 
-enum HandlerType {
-  kStatic = 0,
-  kEcho,
-  kNone,
-  kApi,
-};
-
-struct ParsedConfig {
-  HandlerType handler_type;
-  std::string url_prefix;
-  std::shared_ptr<NginxConfigStatement> statement;
-};
-
 class Session {
- public:
-  Session(boost::asio::io_service& io_service, const NginxConfig& config);
+  public:
+    Session(boost::asio::io_service& io_service, std::map<std::string, 
+            std::pair<std::string, NginxConfig*>> handler_map,
+            std::map<std::string, RequestHandlerFactory*> routes);
 
-  void Start();
-  char* GetData();
-  tcp::socket& GetSocket();
+    virtual void Start() = 0;
+    virtual tcp::socket& Socket() = 0;
 
-  void HandleRead(const boost::system::error_code& error,
-      std::size_t bytes_transferred);
-  void HandleWrite(const boost::system::error_code& error);
-  void HandleWriteShutdown(const boost::system::error_code& error);
-  std::string HandleRequest(const std::string request_string, 
-      std::map<std::string, RequestHandlerFactory*>& routes);
-  std::vector<ParsedConfig*> ParseConfigFile();
-  void CreateHandlers(std::vector<ParsedConfig*>& parsed_configs, std::map<std::string, RequestHandlerFactory*>& factories);
+  protected:
+    virtual void HandleRead(const boost::system::error_code& error,
+                    std::size_t bytes_transferred) = 0;
 
-  // temporary overloading
-  void ParseConfigFile(const std::string& filename, 
-      std::vector<RequestHandler*>& handlers);
+    virtual void HandleWrite(const boost::system::error_code& error) = 0;
 
- private:
-  enum { max_length = 1024 };
-  char data_[max_length];
-  std::string read_string_buffer_;  // Accumulates all reads until a request is found.
-  tcp::socket socket_;
-  NginxConfig config_;
+    tcp::socket socket_;
+    enum { max_length = 8192 };
+    std::string client_ip_;
+    char data_[max_length];
+
+    std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map_;
+    std::map<std::string, RequestHandlerFactory*> routes_;
+    httpParser http_;
 };
 
-inline char* Session::GetData() {
-  return data_;
-}
+class RealSession : public Session {
+  public:
+    RealSession(boost::asio::io_service& io_service,
+                std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map,
+                std::map<std::string, RequestHandlerFactory*> routes);
 
-inline tcp::socket& Session::GetSocket() {
-  return socket_;
-}
+    void Start();
+    tcp::socket& Socket();
+  
+  private:
+    void HandleRead(const boost::system::error_code& error, size_t bytes_transferred);
+
+    void HandleWrite(const boost::system::error_code& error);
+
+    std::string match(std::string request_uri);
+};
 
 #endif  // GOOFYGOOGLERSSERVER_

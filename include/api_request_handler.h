@@ -2,23 +2,39 @@
 #define GOOFYGOOGLERSSERVER_API_REQUEST_HANDLER_H_
 
 #include <string>
-#include <vector>
-
-#include <boost/beast/http.hpp>
+#include <map>
 
 #include "request_handler.h"
+#include "config_parser.h"
 
-namespace http = boost::beast::http;
-using http::string_body;
+struct JSONStruct {
+  std::string name;
+  std::string jsonData;
+  int id;
+};
 
 class ApiRequestHandler : public RequestHandler {
- public:
-  ApiRequestHandler(std::string handled_directory_name, std::string base_directory_path, std::string data_path, std::map<std::string, std::vector<int>>& file_to_id);
-  Status ParseRequest(const http::request<string_body>& req, http::response<string_body>& res);
- private:
-  std::string base_directory_path_; // Relative path from Server program to base directory.
-  std::string data_path_;
-  std::map<std::string, std::vector<int>>& file_to_id_;
+  public:
+    ApiRequestHandler(const std::string& path, NginxConfig* conf);
+    int handle_request(http::request<http::string_body> req, http::response<http::string_body>& res);
+
+  private:
+    int handle_create(const http::request<http::string_body>& req, http::response<http::string_body>& res);
+    int handle_retrieve(const http::request<http::string_body>& req, http::response<http::string_body>& res);
+    int handle_update(const http::request<http::string_body>& req, http::response<http::string_body>& res);
+    int handle_delete(const http::request<http::string_body>& req, http::response<http::string_body>& res);
+    int handle_list(const http::request<http::string_body>& req, http::response<http::string_body>& res);
+
+    int getJsonId(const std::string& uri);
+    std::string getJsonNameNoId(const std::string& uri);
+    std::string getJsonName(const std::string& uri);
+
+    std::string location;
+    std::string root;
+
+    bool bad;
+
+    static std::unordered_map<std::string, std::unordered_map<int, JSONStruct>> json_storage;
 };
 
 #endif // GOOFYGOOGLERSSERVER_API_REQUEST_HANDLER_H_

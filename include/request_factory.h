@@ -5,34 +5,41 @@
 #include <vector>
 #include <boost/asio.hpp>
 
+#include "config_parser.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
 #include "echo_request_handler.h"
+#include "error_request_handler.h"
 #include "api_request_handler.h"
 
 class RequestHandlerFactory {
-public:
-  virtual RequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id);
+  public:
+    virtual RequestHandler* create(std::string location, NginxConfig* conf) = 0;
    
 };
 
 class StaticRequestHandlerFactory : public RequestHandlerFactory {
-public:
-  StaticRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
-private:
+  public:
+    StaticRequestHandlerFactory();
+    StaticRequestHandler* create(std::string location, NginxConfig* conf);
 };
 
 class EchoRequestHandlerFactory : public RequestHandlerFactory {
-public:
-  EchoRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
+  public:
+    EchoRequestHandlerFactory();
+    EchoRequestHandler* create(std::string location, NginxConfig* conf);
+};
+
+class ErrorHandlerFactory : public RequestHandlerFactory {
+  public:
+    ErrorHandlerFactory();
+    ErrorRequestHandler* create(std::string location, NginxConfig* conf);
 };
 
 class ApiRequestHandlerFactory : public RequestHandlerFactory {
-public:
-  ApiRequestHandler* create(const std::string& location, const std::string& url, const std::string& data_path, std::map<std::string, std::vector<int>>& file_to_id) override;
-  // ApiRequestHandler* create(const std::string& location, const std::string& url) override;
-private:
-  std::map<std::string, std::vector<int>> file_to_id;
+  public:
+    ApiRequestHandlerFactory();
+    ApiRequestHandler* create(std::string location, NginxConfig* conf);
 };
 
 #endif // GOOFYGOOGLERSSERVER_REQUEST_FACTORY_H_

@@ -55,6 +55,47 @@ std::string NginxConfigStatement::ToString(int depth) {
   return serialized_statement;
 }
 
+void NginxConfig::GetFilesystemPathHelper(std::map<std::string, std::string> &fsPaths) {
+  for (int i = 0; i < statements_.size(); i++) {
+    NginxConfigStatement *stmt = statements_[i].get();
+    if (stmt->tokens_.size() == 2 && stmt->tokens_[0] == "location") {
+      NginxConfigStatement *child = (stmt->child_block_.get())->statements_[0].get();
+      if (child->tokens_.size() == 2 && child->tokens_[0] == "root") {
+        fsPaths[stmt->tokens_[1]] = child->tokens_[1];
+      }
+    }
+    else if (stmt->child_block_.get() != nullptr) {
+      (*(stmt->child_block_.get())).GetFilesystemPathHelper(fsPaths);
+    }
+  }
+}
+
+std::map<std::string, std::string> NginxConfig::GetFilesystemPath() {
+  std::map<std::string, std::string> filesystem_paths;
+  GetFilesystemPathHelper(filesystem_paths);
+  return filesystem_paths;
+}
+
+std::string NginxConfig::removeSlash(std::string path) {
+  std::string res = "";
+  int pos = path.length() - 1;
+  while (path[pos] == '/' && pos > 0) {
+    pos--;
+  }
+
+  res = path.substr(0, pos + 1);
+  return res;
+}
+
+void NginxConfig::populateHandlerMap(std::map<std::string, std::pair<std::string, NginxConfig*>>& handler_map) {
+  for (int i = 0; i < statements_.size(); i++) {
+    NginxConfigStatement* stmt = statements_[i].get();
+    if (stmt->tokens_.size() == 3 && stmt->tokens_[0] == "location") {
+      handler_map[removeSlash(stmt->tokens_[1])] = { stmt->tokens_[2], (stmt->child_block_).get()};
+    }
+  }
+}
+
 // Converts a TokenType to a string
 const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
   switch (type) {
@@ -66,6 +107,8 @@ const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
     case TOKEN_TYPE_STATEMENT_END: return "TOKEN_TYPE_STATEMENT_END";
     case TOKEN_TYPE_EOF:           return "TOKEN_TYPE_EOF";
     case TOKEN_TYPE_ERROR:         return "TOKEN_TYPE_ERROR";
+    case TOKEN_TYPE_QUOTED_STRING: return "TOKEN_TYPE_QUOTED_STRING";
+    case TOKEN_TYPE_WHITESPACE:    return "TOKEN_TYPE_WHITESPACE";
     default:                       return "Unknown token type";
   }
 }
@@ -106,6 +149,7 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
           case '\t':
           case '\n':
           case '\r':
+            state = TOKEN_STATE_WHITESPACE;
             continue;
           default:
             *value += c;
@@ -113,39 +157,82 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
             continue;
         }
       case TOKEN_STATE_SINGLE_QUOTE:
+
+        if (c == '\\') {
+          const char c_next = input->get();
+          if (c_next == '\'') {
+            *value += '\'';
+            continue;
+          }
+          else if (c_next == '"') {
+            *value += '"';
+            continue;
+          }
+          else if (c_next == 'n') {
+            *value += '\n';
+            continue;
+          }
+          else if (c_next == 't') {
+            *value += '\t';
+            continue;
+          }
+          else if (c_next == '\\') {
+            *value += '\\';
+            continue;
+          }
+          else {
+            input->unget();
+          }
+        } 
         *value += c;
         if (c == '\'') {
-          // The end of a quoted token should be followed by whitespace.
           const char c_next = input->get();
-          if (c_next == ' ' || c_next == '\t' || c_next == '\n' || 
-              c_next == ';' || c_next == '{' || c_next == '}') {
+          // the next char after a quoted token must be a whitespace or semicolon or opening brace
+          if (c_next == ' ' || c_next == '\n' || c_next == '\r' || c_next == '\t' || c_next == ';' || c_next == '{') {
             input->unget();
-          } else {
-            return TOKEN_TYPE_ERROR;
+            return TOKEN_TYPE_QUOTED_STRING;
           }
-          return TOKEN_TYPE_NORMAL;
-        } else if (c == '\\') {
-          // Allow for backslash-escaping within strings.
-          value->pop_back();
-          state = TOKEN_STATE_ESCAPE_SINGLE;
+          std::cout << "ERROR: Quoted token must be followed by whitespace or semicolon" << std::endl;
+          return TOKEN_TYPE_ERROR;
         }
         continue;
       case TOKEN_STATE_DOUBLE_QUOTE:
+        if (c == '\\') {
+          const char c_next = input->get();
+          if (c_next == '\'') {
+            *value += '\'';
+            continue;
+          }
+          else if (c_next == '"') {
+            *value += '"';
+            continue;
+          }
+          else if (c_next == 'n') {
+            *value += '\n';
+            continue;
+          }
+          else if (c_next == 't') {
+            *value += '\t';
+            continue;
+          }
+          else if (c_next == '\\') {
+            *value += '\\';
+            continue;
+          }
+          else {
+            input->unget();
+          }
+        } 
         *value += c;
         if (c == '"') {
-          // The end of a quoted token should be followed by whitespace.
           const char c_next = input->get();
-          if (c_next == ' ' || c_next == '\t' || c_next == '\n' || 
-              c_next == ';' || c_next == '{' || c_next == '}') {
+          // the next char after a quoted token must be a whitespace or semicolon or opening brace
+          if (c_next == ' ' || c_next == '\n' || c_next == '\r' || c_next == '\t' || c_next == ';' || c_next == '{') {
             input->unget();
-          } else {
-            return TOKEN_TYPE_ERROR;
+            return TOKEN_TYPE_QUOTED_STRING;
           }
-          return TOKEN_TYPE_NORMAL;
-        } else if (c == '\\') {
-          // Allow for backslash-escaping within strings.
-          value->pop_back();
-          state = TOKEN_STATE_ESCAPE_DOUBLE;
+          std::cout << "ERROR: Quoted token must be followed by whitespace or semicolon" << std::endl;
+          return TOKEN_TYPE_ERROR;
         }
         continue;
       case TOKEN_STATE_TOKEN_TYPE_COMMENT:
@@ -155,21 +242,22 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
         *value += c;
         continue;
       case TOKEN_STATE_TOKEN_TYPE_NORMAL:
-        if (c == ' ' || c == '\t' || c == '\n' || c == '\t' ||
-            c == ';' || c == '{' || c == '}') {
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r' ||
+            c == ';' || c == '{' || c == '}' || c == '\'' || c == '"') {
           input->unget();
           return TOKEN_TYPE_NORMAL;
         }
         *value += c;
         continue;
-      case TOKEN_STATE_ESCAPE_SINGLE:
-        *value += c;
-        state = TOKEN_STATE_SINGLE_QUOTE;
-        continue;
-      case TOKEN_STATE_ESCAPE_DOUBLE:
-        *value += c;
-        state = TOKEN_STATE_DOUBLE_QUOTE;
-        continue;
+      case TOKEN_STATE_WHITESPACE:
+        if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+          *value += c;
+          continue;
+        }
+        else {
+          input->unget();
+          return TOKEN_TYPE_WHITESPACE;
+        }
     }
   }
 
@@ -189,7 +277,9 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   std::stack<NginxConfig*> config_stack;
   config_stack.push(config);
   TokenType last_token_type = TOKEN_TYPE_START;
+  TokenType second_last_token_type = TOKEN_TYPE_START;
   TokenType token_type;
+  int depth = 0;
   while (true) {
     std::string token;
     token_type = ParseToken(config_file, &token);
@@ -203,56 +293,83 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
       continue;
     }
 
+    if (token_type == TOKEN_TYPE_WHITESPACE) {
+      if (last_token_type != TOKEN_TYPE_WHITESPACE) {
+        second_last_token_type = last_token_type;
+        last_token_type = token_type;
+      }
+      continue;
+    }
+
     if (token_type == TOKEN_TYPE_START) {
       // Error.
       break;
-    } else if (token_type == TOKEN_TYPE_NORMAL) {
+    } else if (token_type == TOKEN_TYPE_NORMAL || token_type == TOKEN_TYPE_QUOTED_STRING) {
       if (last_token_type == TOKEN_TYPE_START ||
+          last_token_type == TOKEN_TYPE_WHITESPACE ||
           last_token_type == TOKEN_TYPE_STATEMENT_END ||
           last_token_type == TOKEN_TYPE_START_BLOCK ||
           last_token_type == TOKEN_TYPE_END_BLOCK ||
-          last_token_type == TOKEN_TYPE_NORMAL) {
-        if (last_token_type != TOKEN_TYPE_NORMAL) {
+          (last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_NORMAL) ||
+          (last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_QUOTED_STRING)) {
+        if (!(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_NORMAL) &&
+            !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_QUOTED_STRING)) {
           config_stack.top()->statements_.emplace_back(
               new NginxConfigStatement);
         }
-        config_stack.top()->statements_.back().get()->tokens_.push_back(
-            token);
+        config_stack.top()->statements_.back().get()->tokens_.push_back(token);
       } else {
         // Error.
         break;
       }
     } else if (token_type == TOKEN_TYPE_STATEMENT_END) {
-      if (last_token_type != TOKEN_TYPE_NORMAL) {
+      if (last_token_type != TOKEN_TYPE_NORMAL && last_token_type != TOKEN_TYPE_QUOTED_STRING &&
+         !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_NORMAL) &&
+         !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_QUOTED_STRING)) {
         // Error.
         break;
       }
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
-      if (last_token_type != TOKEN_TYPE_NORMAL) {
+      if (last_token_type != TOKEN_TYPE_NORMAL && last_token_type != TOKEN_TYPE_QUOTED_STRING &&
+         !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_NORMAL) &&
+         !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_QUOTED_STRING)) {
         // Error.
         break;
       }
       NginxConfig* const new_config = new NginxConfig;
-      config_stack.top()->statements_.back().get()->child_block_.reset(
-          new_config);
+      config_stack.top()->statements_.back().get()->child_block_.reset(new_config);
       config_stack.push(new_config);
+      depth++;
     } else if (token_type == TOKEN_TYPE_END_BLOCK) {
       if (last_token_type != TOKEN_TYPE_STATEMENT_END && 
           last_token_type != TOKEN_TYPE_START_BLOCK &&  // {} is valid 
-          last_token_type != TOKEN_TYPE_END_BLOCK) {    // }} can be valid
+          last_token_type != TOKEN_TYPE_END_BLOCK &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_STATEMENT_END) &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_START_BLOCK) &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_END_BLOCK)) {    // }} can be valid
         // Error.
         break;
       }
-      config_stack.pop();
-      if (config_stack.size() == 0) // Invalid curly braces
+
+      if (depth < 1) {
+        std::cout << "Unmatched curly braces '}' Invalid config file" << std::endl;
         break;
+      }
+
+      config_stack.pop();
+      depth--;
     } else if (token_type == TOKEN_TYPE_EOF) {
       if (last_token_type != TOKEN_TYPE_STATEMENT_END &&
           last_token_type != TOKEN_TYPE_END_BLOCK &&
-          last_token_type != TOKEN_TYPE_START) {
+          last_token_type != TOKEN_TYPE_START &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_STATEMENT_END) &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_END_BLOCK) &&
+          !(last_token_type == TOKEN_TYPE_WHITESPACE && second_last_token_type == TOKEN_TYPE_START)) {
         // Error.
         break;
-      } else if (config_stack.size() > 1) {
+      } 
+      if (depth != 0) {
+        std::cout << "Unmatched curly braces '}' Invalid config file" << std::endl;
         break;
       }
       return true;
@@ -260,10 +377,12 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
       // Error. Unknown token.
       break;
     }
+    second_last_token_type = last_token_type;
     last_token_type = token_type;
   }
 
-  printf ("Bad transition from %s to %s\n",
+  printf ("Bad transition from %s to %s to %s\n",
+          TokenTypeAsString(second_last_token_type),
           TokenTypeAsString(last_token_type),
           TokenTypeAsString(token_type));
   return false;
@@ -290,32 +409,31 @@ bool NginxConfigParser::Parse(const char* file_name, NginxConfig* config) {
 // Recursivly traverses config/statement structure in order to obtain port number.
 // Returns NginxConfig config's port from its configuration.
 // Returns -1 if port cannot be found.
-int NginxConfig::GetPort() {
+int NginxConfig::GetPortHelper() {
   // Find port within statements without child_block_
   int port_value = -1;
-  for(auto cur_statement : this->statements_) {
-    if (cur_statement->child_block_.get() == nullptr) {
-      if (cur_statement->tokens_.size() == 2 && 
-          cur_statement->tokens_[0] == "port") {
-        port_value = atoi(cur_statement->tokens_[1].c_str());
-        if (port_value < 0 || port_value > 65353) { // Validate port range.
-          return -1;
-        }
-        else {
-          return port_value;
-        }
-      }
+  for(int i = 0; i < statements_.size(); i++) {
+    NginxConfigStatement* stmt = statements_[i].get();
+    if (stmt->tokens_.size() == 2 && stmt->tokens_[0] == "port") {
+      port_value = std::stoi(stmt->tokens_[1]);
+      return port_value;
     }
-  }
-
-  // Find port within statements with child_block_
-  for(auto cur_statement : this->statements_) {
-    if (cur_statement->child_block_.get() != nullptr) {
-      port_value = cur_statement->child_block_->GetPort();
+    else if (stmt->child_block_.get() != nullptr) {
+      port_value = (*(stmt->child_block_.get())).GetPortHelper();
       if (port_value != -1) {
         return port_value;
       }
     }
   }
   return -1; // No valid port found.
+}
+
+int NginxConfig::GetPort() {
+  int port = this->GetPortHelper();
+  if (port >= 0 && port <= 65535) {
+    return port;
+  }
+  else {
+    return 8080;
+  }
 }

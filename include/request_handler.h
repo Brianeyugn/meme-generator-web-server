@@ -5,34 +5,15 @@
 #include <map>
 
 #include <boost/beast/http.hpp>
+#include <boost/beast/core.hpp>
 
 namespace http = boost::beast::http;
-using http::string_body;
-
-// Define struct to represent Status
-struct Status {
-  int code_; // 0 represents success.
-  std::string message_;
-
-  Status(int code, const std::string message) : code_(code), message_(message) {}
-};
-
 
 // Abstract RequestHandler Class.
 class RequestHandler {
  public:
-  RequestHandler(std::string handled_directory_name);
-
-  virtual Status ParseRequest(const http::request<string_body>& req, http::response<string_body>& res);
-
-  static std::string GetNextToken(std::string str, std::string delimiter);
-  static std::string GetRequestURL(std::string request_string);
-  static bool ContainsSubstring(const std::string&, const std::string& substr);
-  static http::request<string_body> StringToRequest(std::string request_string);
-  static std::string ResponseToString(http::response<string_body> boost_response);
-  std::string GetPrefix();
- protected:
-  std::string handled_directory_name_;
+  RequestHandler();
+  virtual int handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) = 0;
 };
 
 #endif  // GOOFYGOOGLERSSERVER_REQUEST_HANDLER_H_

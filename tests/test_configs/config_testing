@@ -1,0 +1,25 @@
+port 8080; # port my server listens on
+
+location /echo EchoHandler { # no arguments
+}
+
+location /static1 StaticHandler {
+  root ../data/data_etc;
+}
+
+location /static1/text StaticHandler {
+  root ../data/data_txt; # supports relative paths
+}
+
+location /static1/images StaticHandler {
+  root ../data/data_img;
+}
+
+
+location /static2 StaticHandler {
+  root ../data;
+}
+
+location /api ApiHandler {
+  root ../api_dir;
+}
