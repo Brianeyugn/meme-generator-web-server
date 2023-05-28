@@ -1,3 +1,5 @@
+#include "session.h"
+
 #include <cstring>  // For strcpy
 #include <fstream>
 #include <iostream> // For Debugging
@@ -7,7 +9,6 @@
 #include <boost/beast/http.hpp>
 #include <boost/bind.hpp>
 
-#include "session.h"
 #include "config_parser.h"
 #include "echo_request_handler.h"
 #include "error_request_handler.h"
@@ -80,8 +81,7 @@ void RealSession::HandleRead(const boost::system::error_code& error,
   if ((ec && ec != http::error::bad_version)) {
     res.result(400);
     res.reason("Bad Request");
-  }
-  else {
+  } else {
     int status;
     if (location != "") {
       log->LogInfo("RealSession :: handle_read found longest match = " + location + "\n");
@@ -89,8 +89,7 @@ void RealSession::HandleRead(const boost::system::error_code& error,
       NginxConfig* conf = handler_map_[location].second;
       RequestHandler* handler = factory->create(location, conf);
       status = handler->handle_request(req, res);
-    }
-    else {
+    } else {
       location = "/";
       RequestHandlerFactory* factory = routes_[location];
       NginxConfig* conf = handler_map_[location].second;
@@ -137,13 +136,13 @@ std::string RealSession::match(std::string request_uri) {
   std::string res = "";
   int res_len = 0;
   std::map<std::string, RequestHandlerFactory*>::iterator it;
-  for(it = routes_.begin(); it != routes_.end(); it++) {
+  for (it = routes_.begin(); it != routes_.end(); it++) {
     std::string location = it->first;
     log->LogInfo("match :: location = " + location + "\n");
-    if(request_uri.substr(0, location.length()) == location &&
+    if (request_uri.substr(0, location.length()) == location &&
        (request_uri.length() == location.length() ||
         request_uri.at(location.length()) == '/')) {
-        if(location.length() > res_len) {
+        if (location.length() > res_len) {
           res = location;
           res_len = location.length();
         }

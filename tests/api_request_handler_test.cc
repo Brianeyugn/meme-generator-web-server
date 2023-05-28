@@ -97,7 +97,7 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_PostCreate_Success) {
     int result = handler.handle_request(req, res);
 
     // Assert that the response indicates success
-    EXPECT_EQ(200, result);
+    EXPECT_EQ(HTTP_STATUS_CREATED, result);
     EXPECT_EQ(11, res.version());
     EXPECT_EQ("application/json", res[boost::beast::http::field::content_type]);
 
@@ -130,7 +130,7 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_Get_Success) {
     int result = handler.handle_request(req, res);
 
     // Assert that the response indicates success
-    EXPECT_EQ(200, result);
+    EXPECT_EQ(HTTP_STATUS_OK, result);
     EXPECT_EQ(11, res.version());
     EXPECT_EQ("application/json", res[boost::beast::http::field::content_type]);
 
@@ -164,7 +164,7 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_PutUpdate_Success) {
   int result = handler.handle_request(req, res);
 
   // Assert that the response indicates success
-  EXPECT_EQ(200, result);
+  EXPECT_EQ(HTTP_STATUS_OK, result);
   EXPECT_EQ(11, res.version());
 
   // Delete created test directory
@@ -194,7 +194,7 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_DeleteRemove_Success) {
   int result = handler.handle_request(req, res);
 
   // Assert that the response indicates success
-  EXPECT_EQ(200, result);
+  EXPECT_EQ(HTTP_STATUS_OK, result);
   EXPECT_EQ(11, res.version());
   
   // Check if file has been deleted
@@ -231,7 +231,7 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_GetList_Success) {
   int result = handler.handle_request(req, res);
 
   // Assert that the response indicates success
-  EXPECT_EQ(200, result);
+  EXPECT_EQ(HTTP_STATUS_OK, result);
   EXPECT_EQ(11, res.version());
 
   // Delete created test directory

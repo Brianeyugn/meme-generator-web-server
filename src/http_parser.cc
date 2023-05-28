@@ -1,18 +1,20 @@
 #include "http_parser.h"
-#include <cstdlib>
-#include <iostream>
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-#include <boost/lexical_cast.hpp>
-#include <cstring> 
-#include <bits/stdc++.h> 
-#include <vector>
-#include <string.h> 
-#include <logging.h>
-#include <algorithm>
 
-httpParser::httpParser() { 
-};
+#include <bits/stdc++.h>
+#include <logging.h>
+#include <string.h>
+
+#include <algorithm>
+#include <cstdlib>
+#include <cstring> 
+#include <iostream>
+#include <vector>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+
+httpParser::httpParser() {};
 
 void httpParser::getFields(std::string request_string, boost::beast::http::request<http::string_body>& req) {
   std::string type;
@@ -28,76 +30,63 @@ void httpParser::getFields(std::string request_string, boost::beast::http::reque
   for(int i = 0; i < request_string.length(); i++) {
     switch(cycle) {
       case 0:
-        if(request_string[i] != ' ') {
+        if (request_string[i] != ' ') {
           type += request_string[i];
-        }
-        else {
+        } else {
           if (type == "GET" || type == "POST" ||
               type == "PUT" || type == "DELETE" ||
               type == "HEAD" || type == "CONNECT" ||
               type == "TRACE" || type == "OPTIONS") {
             if (type == "GET") {
               req.method(http::verb::get);
-            }
-            else if (type == "POST") {
+            } else if (type == "POST") {
               req.method(http::verb::post);
-            }
-            else if (type == "PUT") {
+            } else if (type == "PUT") {
               req.method(http::verb::put);
-            }
-            else if (type == "DELETE") {
+            } else if (type == "DELETE") {
               req.method(http::verb::delete_);
-            }
-            else if (type == "HEAD") {
+            } else if (type == "HEAD") {
               req.method(http::verb::head);
-            }
-            else if (type == "CONNECT") {
+            } else if (type == "CONNECT") {
               req.method(http::verb::connect);
-            }
-            else if (type == "OPTIONS") {
+            } else if (type == "OPTIONS") {
               req.method(http::verb::options);
-            }
-            else {
+            } else {
               req.method(http::verb::trace);
             }
             cycle++;
-          }
-          else {
+          } else {
             checkSyntax = true;
           }
         }
         break;
       case 1:
-        if(request_string[i] != ' ') {
+        if (request_string[i] != ' ') {
           request_uri += request_string[i];
-        }
-        else {
+        } else {
           cycle++;
         }
         break;
 
       case 2:
-        if(request_string[i] != '\r') {
+        if (request_string[i] != '\r') {
           version += request_string[i];
-        }
-        else {
-          if(request_string[i + 1] == '\n' && i + 1 < request_string.length()) {
+        } else {
+          if (request_string[i + 1] == '\n' && i + 1 < request_string.length()) {
             cycle++;
             i++;
-          }
-          else {
+          } else {
             checkSyntax = true;
           }
         }
         break;
       
       case 3:
-        if(request_string[i] != '\r') {
+        if (request_string[i] != '\r') {
           header_cpy += request_string[i];
-        }
-        else {
-          if(request_string[i + 1] == '\n' && i + 1 < request_string.length()) {
-            if(header_cpy == "") {
+        } else {
+          if (request_string[i + 1] == '\n' && i + 1 < request_string.length()) {
+            if (header_cpy == "") {
               cycle++;
               i++;
               break;
@@ -105,15 +94,13 @@ void httpParser::getFields(std::string request_string, boost::beast::http::reque
             headers.push_back(header_cpy);
             header_cpy = "";
 
-            if(request_string[i + 2] == '\r' && request_string[i + 3] == '\n' && i + 3 < request_string.length()) {
+            if (request_string[i + 2] == '\r' && request_string[i + 3] == '\n' && i + 3 < request_string.length()) {
               cycle++;
               i+=3;
-            }
-            else {
+            } else {
               i++;
             }
-          }
-          else {
+          } else {
             checkSyntax = true;
           }
         }
@@ -126,14 +113,14 @@ void httpParser::getFields(std::string request_string, boost::beast::http::reque
       break;
     }
   }
-  if(cycle != 4) {
+  if (cycle != 4) {
     checkSyntax = true;
   }
   req.target(request_uri);
 
   for(const auto& header : headers) {
     std::size_t pos = header.find(':');
-    if(pos != std::string::npos) {
+    if (pos != std::string::npos) {
       std::string name = header.substr(0, pos);
       std::string value = header.substr(pos + 2);
       req.set(name, value);

@@ -59,4 +59,4 @@ inline void Logger::LogFatal(std::string message) {
   BOOST_LOG_TRIVIAL(fatal) << message;
 }
 
-#endif  // GOOFYGOOGLERSSERVER_LOGGING_H_
+#endif // GOOFYGOOGLERSSERVER_LOGGING_H_

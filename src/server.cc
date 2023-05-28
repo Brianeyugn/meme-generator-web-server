@@ -27,8 +27,7 @@ Server::Server(boost::asio::io_service& io_service, short port,
 
     if (routes_[it->first] == nullptr) {
       log->LogWarn("createHandlerFactory failed");
-    }
-    else {
+    } else {
       log->LogInfo("createHandlerFactory success");
     }
   }
@@ -51,8 +50,7 @@ bool Server::StartAccept() {
   
   if (new_session == nullptr) {
     return false;
-  }
-  else {
+  } else {
     return true;
   }
 }

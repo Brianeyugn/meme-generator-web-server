@@ -1,8 +1,7 @@
 #include "request_factory.h"
 
-StaticRequestHandlerFactory::StaticRequestHandlerFactory() {
-};
+StaticRequestHandlerFactory::StaticRequestHandlerFactory() {};
 
 StaticRequestHandler* StaticRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
-    return new StaticRequestHandler(location, conf);
+  return new StaticRequestHandler(location, conf);
 }

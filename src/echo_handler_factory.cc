@@ -1,7 +1,6 @@
 #include "request_factory.h"
 
-EchoRequestHandlerFactory::EchoRequestHandlerFactory() {
-};
+EchoRequestHandlerFactory::EchoRequestHandlerFactory() {};
 
 EchoRequestHandler* EchoRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
     return new EchoRequestHandler();

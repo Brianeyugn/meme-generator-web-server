@@ -36,4 +36,4 @@ class Server {
   std::map<std::string, RequestHandlerFactory*> routes_;
 };
 
-#endif  // GOOFYGOOGLERSSERVER_SERVER_H_
+#endif // GOOFYGOOGLERSSERVER_SERVER_H_

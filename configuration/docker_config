@@ -1,6 +1,25 @@
-foo "bar";
-server {
-  port 80;
-  server_name foo.com;
-  root /home/ubuntu/sites/foo/;
+port 80; # port my server listens on
+
+location /static1 StaticHandler {
+  root ../data/data_etc;
 }
+
+location /static1/text StaticHandler {
+  root ../data/data_txt;
+}
+
+location /static1/images StaticHandler {
+  root ../data/data_img;
+}
+
+location /static2 StaticHandler {
+  root ../data;
+}
+
+location /api ApiHandler {
+  root ../api_dir;
+}
+
+location /echo EchoHandler {}
+
+location / ErrorHandler {}

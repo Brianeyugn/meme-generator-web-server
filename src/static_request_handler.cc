@@ -9,46 +9,37 @@
 #include <boost/lexical_cast.hpp>
 
 StaticRequestHandler::StaticRequestHandler(const std::string& path, NginxConfig* config)
-  : RequestHandler() {
-  location = path;
-  if(config->statements_.size() < 1) {
-    bad = true;
+  : RequestHandler(), location_(path) {
+  if (config->statements_.size() < 1) {
+    bad_ = true;
     return;
   }
   NginxConfigStatement* stmt = config->statements_[0].get();
-  if(stmt->tokens_[0] != "root" || stmt->tokens_.size() != 2) {
-    bad = true;
+  if (stmt->tokens_[0] != "root" || stmt->tokens_.size() != 2) {
+    bad_ = true;
     return;
   }
 
-  root = stmt->tokens_[1];;
-  bad = false;
+  root_ = stmt->tokens_[1];;
+  bad_ = false;
 }
 
 int StaticRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
   res.version(req.version());
 
-  if(req.method_string() == "") {
-    res.reason("Bad Request");
-    res.result(400);
-    return 400;
+  if (req.method_string() == "") {
+    return handle_bad_request(res);
   }
 
-  if(bad) {
-    std::string error_msg = "404 Not Found\r\n";
+  if (bad_) {
     log->LogWarn("Bad config thrown");
-    res.reason("Not Found");
-    res.result(404);
-    res.set(http::field::content_type, "text/plain");
-    res.set(http::field::content_length, std::to_string(error_msg.size()));
-    res.body() = error_msg;
-    return 404;
+    return handle_not_found(res);
   }
 
-  if(req.method() != http::verb::get) {
+  if (req.method() != http::verb::get) {
     res.reason("OK");
-    res.result(200);
+    res.result(HTTP_STATUS_OK);
     res.set(http::field::content_type, "text/plain");
 
     std::string const string_headers = boost::lexical_cast<std::string>(req.base());
@@ -57,46 +48,37 @@ int StaticRequestHandler::handle_request(http::request<http::string_body> req, h
     body += req.body();
     res.body() = body;
     res.set(http::field::content_length, std::to_string(res.body().size()));
-    return 200;
+    return HTTP_STATUS_OK;
   }
 
   std::string request_uri(req.target().begin(), req.target().end());
-  std::string fileExt = request_uri.substr(request_uri.find_last_of(".") + 1);
-  std::string filePath = request_uri;
+  std::string file_ext = request_uri.substr(request_uri.find_last_of(".") + 1);
+  std::string file_path = request_uri;
 
-  filePath = root + request_uri.substr(location.length());
-  log->LogInfo("StaticRequestHandler: Longest matched patch " + request_uri + " is " + location + "\n");
-  log->LogInfo("StaticRequstHandler: File path used is " + filePath + "\n");
-  std::ifstream istream(filePath, std::ios::in | std::ios::binary);
+  file_path = root_ + request_uri.substr(location_.length());
+  log->LogInfo("StaticRequestHandler: Longest matched patch " + request_uri + " is " + location_ + "\n");
+  log->LogInfo("StaticRequstHandler: File path used is " + file_path + "\n");
+  std::ifstream istream(file_path, std::ios::in | std::ios::binary);
 
-  if(!boost::filesystem::is_regular_file(filePath) || !istream.good()) {
-    std::string error_msg = "404 Not Found\r\n";
-    res.reason("File Not Found");
-    res.result(404);
-    res.set(http::field::content_type, "text/plain");
-    res.set(http::field::content_length, std::to_string(error_msg.size()));
-    res.body() = error_msg;
-    return 404;
-  }
-  else {
+  if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
+    return handle_not_found(res);
+  } else {
     std::string body((std::istreambuf_iterator<char>(istream)),
                      (std::istreambuf_iterator<char>()));
 
     int content_length = body.length();
     Mime mime;
-    std::string content_type = mime.getContentType(fileExt);
+    std::string content_type = mime.getContentType(file_ext);
 
     res.set(http::field::content_type, content_type);
     res.set(http::field::content_length, std::to_string(content_length));
 
     res.reason("OK");
-    res.result(200);
+    res.result(HTTP_STATUS_OK);
     res.body() = body;
 
-    return 200;
+    return HTTP_STATUS_OK;
   }
-  res.reason("Bad Request");
-  res.result(400);
-
-  return 400;
+  
+  return handle_bad_request(res);
 }
