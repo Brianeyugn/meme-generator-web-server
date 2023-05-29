@@ -98,11 +98,12 @@ gtest_discover_tests(api_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_D
 gtest_discover_tests(mime_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(http_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
-#add_test(NAME integration_tests COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests.sh)
+add_test(NAME integration_tests COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/integration_tests.sh)
 
 include(cmake/CodeCoverageReportConfig.cmake)
 generate_coverage_report(
     TARGETS
         config_parser_lib server_lib session_lib server handler_lib echo_request_lib static_request_lib error_request_lib api_request_lib mime_lib http_parser_lib     
-        TESTS
-        config_parser_test server_test session_test echo_handler_test static_handler_test error_handler_test api_handler_test mime_test http_parser_test)
+    TESTS
+        config_parser_test server_test session_test echo_handler_test static_handler_test error_handler_test api_handler_test mime_test http_parser_test
+)

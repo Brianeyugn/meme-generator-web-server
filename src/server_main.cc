@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include <boost/asio.hpp>
 
@@ -47,16 +48,31 @@ int main(int argc, char* argv[]) {
 
     std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map;
     config.populateHandlerMap(handler_map);
-    // std::map<std::string, std::pair<std::string, NginxConfig*>>::iterator it;
-    // for (it = handler_map.begin(), it != handler_map.end(), it++) {
 
-    // }
-    
-    // For testing-- via commandline-- can also use:
-    // Server s(io_service, std::atoi(argv[1]));
     Server s(io_service, server_port, handler_map);
     s.StartAccept();
-    io_service.run();
+
+    // Create a separate thread for each session (up to SERVER_MAX_THREADS)
+    std::vector<std::thread> threads;
+    int thread_num;
+    try {
+      threads.reserve(SERVER_MAX_THREADS);
+      for (thread_num = 0; thread_num < SERVER_MAX_THREADS; thread_num++) {
+          log->LogDebug("Server main: creating thread: " + std::to_string(thread_num));
+          threads.push_back(std::thread([&io_service]() { io_service.run(); }));
+      }
+
+      log->LogInfo("Server main: created " + std::to_string(SERVER_MAX_THREADS) + " threads");
+    } catch (std::exception& e) {
+      std::string error = e.what();
+      log->LogError("Server main: error creating thread " + std::to_string(thread_num) + ": " + error);
+    }
+
+    // Join threads that are finished
+    for (int thread_num = 0; thread_num < SERVER_MAX_THREADS; thread_num++) {
+      threads[thread_num].join();
+      log->LogDebug("Joining thread: " + std::to_string(thread_num));
+    }
 
     log->LogInfo("Stopping Server");
   } catch (std::exception& e) {

@@ -9,14 +9,14 @@
 #include <boost/beast/http.hpp>
 #include <boost/bind.hpp>
 
+#include "api_request_handler.h"
 #include "config_parser.h"
 #include "echo_request_handler.h"
 #include "error_request_handler.h"
 #include "logging.h"
+#include "request_factory.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
-#include "api_request_handler.h"
-#include "request_factory.h"
 
 namespace http = boost::beast::http;
 using boost::asio::ip::tcp;
@@ -82,23 +82,19 @@ void RealSession::HandleRead(const boost::system::error_code& error,
     res.result(400);
     res.reason("Bad Request");
   } else {
-    int status;
-    if (location != "") {
-      log->LogInfo("RealSession :: handle_read found longest match = " + location + "\n");
-      RequestHandlerFactory* factory = routes_[location];
-      NginxConfig* conf = handler_map_[location].second;
-      RequestHandler* handler = factory->create(location, conf);
-      status = handler->handle_request(req, res);
-    } else {
-      location = "/";
-      RequestHandlerFactory* factory = routes_[location];
-      NginxConfig* conf = handler_map_[location].second;
-      RequestHandler* handler = factory->create(location, conf);
-      status = handler->handle_request(req, res);
+    if (location == "") {
+      location = "/"; 
     }
+
+    int status;
+    log->LogInfo("RealSession :: handle_read found longest match = " + location + "\n");
+    RequestHandlerFactory* factory = routes_[location];
+    NginxConfig* conf = handler_map_[location].second;
+    RequestHandler* handler = factory->create(location, conf);
+    status = handler->handle_request(req, res);
   }
 
-  memset(data_, 0, sizeof data_);
+  memset(data_, 0, sizeof(data_));
 
   std::string response_string = http_.getResponse(res);
 

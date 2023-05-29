@@ -3,17 +3,21 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-#include "session.h"
-#include <string>
 #include <map>
-#include "echo_request_handler.h"
-#include "static_request_handler.h"
-#include "error_request_handler.h"
+#include <string>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+
 #include "api_request_handler.h"
 #include "config_parser.h"
+#include "echo_request_handler.h"
+#include "error_request_handler.h"
 #include "request_factory.h"
+#include "session.h"
+#include "static_request_handler.h"
+
+#define SERVER_MAX_THREADS 128
 
 using boost::asio::ip::tcp;
 

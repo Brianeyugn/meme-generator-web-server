@@ -7,7 +7,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 
-#define HTTP_STATUS_OK 200
+#define HTTP_STATUS_OK      200
 #define HTTP_STATUS_CREATED 201
 
 #define HTTP_STATUS_BAD_REQUEST 400
