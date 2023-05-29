@@ -37,7 +37,9 @@ class ApiRequestHandler : public RequestHandler {
   static std::unordered_map<std::string, std::unordered_map<int, JSONStruct>> json_storage_;
 };
 
+// Helper for determining if an entity ID only contains numbers
 static inline bool is_num(std::string id) {
+  // Use a try/catch block because std::stoi() can throw an exception if the string doesn't start with a number
   try {
     return std::to_string(std::stoi(id)) == id;
   }
