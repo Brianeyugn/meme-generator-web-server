@@ -12,11 +12,11 @@
 #include "error_request_handler.h"
 #include "request_handler.h"
 #include "static_request_handler.h"
+#include "health_request_handler.h"
 
 class RequestHandlerFactory {
  public:
-  virtual RequestHandler* create(std::string location, NginxConfig* conf) = 0;
-   
+  virtual RequestHandler* create(std::string location, NginxConfig* conf) = 0; 
 };
 
 class StaticRequestHandlerFactory : public RequestHandlerFactory {
@@ -41,6 +41,12 @@ class ApiRequestHandlerFactory : public RequestHandlerFactory {
  public:
   ApiRequestHandlerFactory();
   ApiRequestHandler* create(std::string location, NginxConfig* conf);
+};
+
+class HealthRequestHandlerFactory : public RequestHandlerFactory {
+ public:
+  HealthRequestHandlerFactory();
+  HealthRequestHandler* create(std::string location, NginxConfig* conf);
 };
 
 #endif // GOOFYGOOGLERSSERVER_REQUEST_FACTORY_H_

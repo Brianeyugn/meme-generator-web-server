@@ -79,5 +79,8 @@ RequestHandlerFactory* Server::createHandlerFactory(const std::string& name) {
   if (name == "ApiHandler") {
     return new ApiRequestHandlerFactory();
   }
+  if (name == "HealthHandler") {
+    return new HealthRequestHandlerFactory();
+  }
   return nullptr;
 }

@@ -182,6 +182,19 @@ test_multithreading() {
   return 0
 }
 
+test_health() {
+  INPUT="http_requests/health_request"
+  EXPECTED_OUTPUT="http_responses/expected_health_response"
+
+  cat "${INPUT}" | nc -q 1 "${SERVER_IP}" "${SERVER_PORT}" > "${OUTPUT_FILE}"
+  diff "${EXPECTED_OUTPUT}" "${OUTPUT_FILE}"
+
+  status=$?
+
+  rm "${OUTPUT_FILE}"
+
+  return $status
+}
 
 main() {
   # Populate array with tests we want to run (one test per line)
@@ -196,6 +209,7 @@ main() {
     test_api_update
     test_api_list
     test_api_delete
+    test_health
   )
 
   # Start the server

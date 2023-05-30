@@ -23,3 +23,5 @@ location /static2 StaticHandler {
 location /api ApiHandler {
   root ../api_dir;
 }
+
+location /health HealthHandler {}

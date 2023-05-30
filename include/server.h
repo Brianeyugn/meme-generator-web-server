@@ -16,6 +16,7 @@
 #include "request_factory.h"
 #include "session.h"
 #include "static_request_handler.h"
+#include "health_request_handler.h"
 
 #define SERVER_MAX_THREADS 128
 

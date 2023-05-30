@@ -323,7 +323,7 @@ TEST_F(NginxConfigParserTest, populateHandlerMap) {
   EXPECT_TRUE(success);
   std::map<std::string, std::pair<std::string, NginxConfig*>> hdlrMap;
   out_config.populateHandlerMap(hdlrMap);
-  EXPECT_EQ(hdlrMap.size(), 6);
+  EXPECT_EQ(hdlrMap.size(), 7);
   EXPECT_EQ(hdlrMap["/echo"].first, "EchoHandler");
   EXPECT_EQ(hdlrMap["/static1"].first, "StaticHandler");
   EXPECT_EQ(hdlrMap["/static1/text"].first, "StaticHandler");
@@ -336,4 +336,5 @@ TEST_F(NginxConfigParserTest, populateHandlerMap) {
   EXPECT_EQ(hdlrMap["/static1/images"].second->ToString(), "root ../data/data_img;\n");
   EXPECT_EQ(hdlrMap["/static2"].second->ToString(), "root ../data;\n");
   EXPECT_EQ(hdlrMap["/api"].second->ToString(), "root ../api_dir;\n");
+  EXPECT_EQ(hdlrMap["/health"].second->ToString(), "");
 }
