@@ -48,11 +48,7 @@ bool Server::StartAccept() {
     boost::bind(&Server::HandleAccept, this, new_session,
     boost::asio::placeholders::error));
   
-  if (new_session == nullptr) {
-    return false;
-  } else {
-    return true;
-  }
+  return new_session != nullptr;
 }
 
 // Start a new request Session

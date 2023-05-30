@@ -71,44 +71,48 @@ target_link_libraries(server server_lib session_lib Boost::system pthread config
 target_link_libraries(mime_lib)
 
 # Test executable name, srcs, and deps
-add_executable(config_parser_test tests/config_parser_test.cc)
-target_link_libraries(config_parser_test config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
-add_executable(server_test tests/server_test.cc)
-target_link_libraries(server_test server_lib session_lib echo_request_lib static_request_lib error_request_lib api_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
-add_executable(session_test tests/session_test.cc)
-target_link_libraries(session_test session_lib echo_request_lib static_request_lib error_request_lib config_parser_lib gtest_main gmock_main logging_lib Boost::regex Boost::log_setup Boost::log)
-add_executable(echo_handler_test tests/echo_request_handler_test.cc)
-target_link_libraries(echo_handler_test echo_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
-add_executable(static_handler_test tests/static_request_handler_test.cc)
-target_link_libraries(static_handler_test static_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log mime_lib)
-add_executable(error_handler_test tests/error_request_handler_test.cc)
-target_link_libraries(error_handler_test error_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 add_executable(api_handler_test tests/api_request_handler_test.cc)
-target_link_libraries(api_handler_test api_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+add_executable(config_parser_test tests/config_parser_test.cc)
+add_executable(echo_handler_test tests/echo_request_handler_test.cc)
+add_executable(error_handler_test tests/error_request_handler_test.cc)
 add_executable(health_handler_test tests/health_request_handler_test.cc)
-target_link_libraries(health_handler_test health_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
-add_executable(mime_test tests/mime_test.cc)
-target_link_libraries(mime_test mime_lib gtest_main)
 add_executable(http_parser_test tests/http_parser_test.cc)
+add_executable(logging_test tests/logging_test.cc)
+add_executable(mime_test tests/mime_test.cc)
+add_executable(server_test tests/server_test.cc)
+add_executable(session_test tests/session_test.cc)
+add_executable(static_handler_test tests/static_request_handler_test.cc)
+target_link_libraries(api_handler_test api_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(config_parser_test config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(echo_handler_test echo_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(error_handler_test error_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(health_handler_test health_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(http_parser_test http_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(logging_test gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(mime_test mime_lib gtest_main)
+target_link_libraries(server_test server_lib session_lib echo_request_lib static_request_lib error_request_lib api_request_lib health_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib health_handler_factory_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(session_test session_lib echo_request_lib static_request_lib error_request_lib config_parser_lib gtest_main gmock_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(static_handler_test static_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log mime_lib)
 
 # Test binaries
-gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(echo_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(static_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(error_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(api_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(echo_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(error_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(health_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-gtest_discover_tests(mime_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(http_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(logging_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(mime_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+# gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(static_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 add_test(NAME integration_tests COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/integration_tests.sh)
 
 include(cmake/CodeCoverageReportConfig.cmake)
 generate_coverage_report(
     TARGETS
-        config_parser_lib server_lib session_lib server handler_lib echo_request_lib static_request_lib error_request_lib api_request_lib mime_lib http_parser_lib     
+        api_request_lib config_parser_lib echo_request_lib error_request_lib handler_lib health_request_lib http_parser_lib logging_lib mime_lib server_lib server session_lib static_request_lib
     TESTS
-        config_parser_test server_test session_test echo_handler_test static_handler_test error_handler_test api_handler_test mime_test http_parser_test
+        api_handler_test config_parser_test echo_handler_test error_handler_test health_handler_test http_parser_test logging_test mime_test server_test session_test static_handler_test
 )

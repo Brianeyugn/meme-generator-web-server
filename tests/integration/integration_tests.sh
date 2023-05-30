@@ -35,7 +35,7 @@ kill_server() {
   kill "${SERVER_PID}"
 }
 
-# Testing functions
+# Testing functions (0 for success)
 
 test_error() {
   INPUT="http_requests/error_request"
@@ -177,9 +177,24 @@ test_api_delete() {
   return $status
 }
 
-# TODO: multithread test
 test_multithreading() {
-  return 0
+  INPUT_1="http_requests/echo_request"
+  INPUT_2="http_requests/health_request"
+
+  # Send first request with a delay between each line (should take a few seconds)
+  time_before=$(date +%s)
+  cat "${INPUT_1}" | nc -i 1 -q 1 "${SERVER_IP}" "${SERVER_PORT}" > /dev/null &
+
+  # Send second request (should be immediate)
+  cat "${INPUT_2}" | nc -q 1 "${SERVER_IP}" "${SERVER_PORT}" > /dev/null
+  time_after=$(date +%s)
+
+  # Check time difference with a tolerance of 3 seconds
+  if [ $(expr ${time_after} - ${time_before}) -le 3 ]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 test_health() {
@@ -209,6 +224,7 @@ main() {
     test_api_update
     test_api_list
     test_api_delete
+    test_multithreading
     test_health
   )
 

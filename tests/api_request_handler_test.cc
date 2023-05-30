@@ -13,7 +13,7 @@ class ApiRequestHandlerTest : public ::testing::Test {
  protected:
   NginxConfigParser config_parser;
   NginxConfig config;
-  std::map<std::string, std::pair<std::string, NginxConfig*>> hdlrMap;
+  std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map;
 
   std::string makeRequestStringWithSpecifiedFields(std::string method = "GET", 
                                                    std::string requestURI = "/static1/sample.html",
@@ -34,27 +34,25 @@ class ApiRequestHandlerTest : public ::testing::Test {
                                       std::vector<std::string> headers = {},
                                       std::string body = "") {
     if(method == "GET") {
-    req.method(http::verb::get);
+      req.method(http::verb::get);
     }
     if(method == "PUT") {
-    req.method(http::verb::put);
+      req.method(http::verb::put);
     }
     if(method == "POST") {
-    req.method(http::verb::post);
+      req.method(http::verb::post);
     }
     if(method == "DELETE") {
-    req.method(http::verb::delete_);
+      req.method(http::verb::delete_);
     }
-    req.target(requestURI);
-    for (const auto& header : headers)
-    {
-    std::size_t pos = header.find(':');
-    if (pos != std::string::npos)
-    {
-      std::string name = header.substr(0, pos);
-      std::string value = header.substr(pos + 2); // Skip the ':' and space after it
-      req.set(name, value);
-    }
+      req.target(requestURI);
+    for (const auto& header : headers) {
+      std::size_t pos = header.find(':');
+      if (pos != std::string::npos) {
+        std::string name = header.substr(0, pos);
+        std::string value = header.substr(pos + 2); // Skip the ':' and space after it
+        req.set(name, value);
+      }
     }
     req.body() = body;
   }
@@ -84,8 +82,8 @@ class ApiRequestHandlerTest : public ::testing::Test {
 TEST_F(ApiRequestHandlerTest, HandleRequest_PostCreate_Success) {
   // Prepare test configuration
   bool success = config_parser.Parse("test_configs/config_testing", &config);
-  config.populateHandlerMap(hdlrMap);
-  ApiRequestHandler handler("/api", hdlrMap["/api"].second);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
   std::string method = "POST";
   std::string requestURI = "/api/create";
   std::string httpVersion = "HTTP/1.1";
@@ -110,8 +108,8 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_PostCreate_Success) {
 
 TEST_F(ApiRequestHandlerTest, HandleRequest_Get_Success) {
   bool success = config_parser.Parse("test_configs/config_testing", &config);
-  config.populateHandlerMap(hdlrMap);
-  ApiRequestHandler handler("/api", hdlrMap["/api"].second);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
   std::string method = "POST";
   std::string requestURI = "/api/create";
   std::string httpVersion = "HTTP/1.1";
@@ -144,9 +142,9 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_Get_Success) {
 TEST_F(ApiRequestHandlerTest, HandleRequest_PutUpdate_Success) {
   // Prepare test configuration
   bool success = config_parser.Parse("test_configs/config_testing", &config);
-  config.populateHandlerMap(hdlrMap);
+  config.populateHandlerMap(handler_map);
   
-  ApiRequestHandler handler("/api", hdlrMap["/api"].second);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
   std::string method = "POST";
   std::string requestURI = "/api/create";
   std::string httpVersion = "HTTP/1.1";
@@ -177,8 +175,8 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_PutUpdate_Success) {
 TEST_F(ApiRequestHandlerTest, HandleRequest_DeleteRemove_Success) {
   // Prepare test configuration
   bool success = config_parser.Parse("test_configs/config_testing", &config);
-  config.populateHandlerMap(hdlrMap);
-  ApiRequestHandler handler("/api", hdlrMap["/api"].second);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
 
   std::string method = "DELETE";
   std::string requestURI = "/api/create/1";
@@ -211,8 +209,8 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_DeleteRemove_Success) {
 TEST_F(ApiRequestHandlerTest, HandleRequest_GetList_Success) {
   // Prepare test configuration
   bool success = config_parser.Parse("test_configs/config_testing", &config);
-  config.populateHandlerMap(hdlrMap);
-  ApiRequestHandler handler("/api", hdlrMap["/api"].second);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
 
   std::string method = "GET";
   std::string requestURI = "/api/create";
@@ -238,5 +236,199 @@ TEST_F(ApiRequestHandlerTest, HandleRequest_GetList_Success) {
   EXPECT_EQ(11, res.version());
 
   // Delete created test directory
+  boost::filesystem::remove_all("../api_dir/create");
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestNoMethod) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "";
+  std::string requestURI = "/api/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_BAD_REQUEST, result);
+  EXPECT_EQ(11, res.version());
+
+  // Delete created test directory
+  boost::filesystem::remove_all("../api_dir/create");
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestUnsupportedMethod) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "HEAD";
+  std::string requestURI = "/api/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_BAD_REQUEST, result);
+  EXPECT_EQ(11, res.version());
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestPathNotFound) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "GET";
+  std::string requestURI = "/api/nonexistent/directory";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_NOT_FOUND, result);
+  EXPECT_EQ(11, res.version());
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestEmptyApiConfig) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/api_handler_bad1", &config);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "GET";
+  std::string requestURI = "/api/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_BAD_REQUEST, result);
+  EXPECT_EQ(11, res.version());
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestMisnamedApiConfig) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/api_handler_bad2", &config);
+  config.populateHandlerMap(handler_map);
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "GET";
+  std::string requestURI = "/api/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_BAD_REQUEST, result);
+  EXPECT_EQ(11, res.version());
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestReadAlreadyExistingFile) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+
+  // Create file before initializing ApiRequestHandler
+  boost::filesystem::create_directories("../api_dir/create");
+  std::ofstream("../api_dir/create/1");
+
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "GET";
+  std::string requestURI = "/api/create/1";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_OK, result);
+  EXPECT_EQ(11, res.version());
+
+  // Delete test directory
+  boost::filesystem::remove_all("../api_dir/create");
+}
+
+TEST_F(ApiRequestHandlerTest, HandleRequestReadAlreadyExistingFileBadName) {
+  // Prepare test configuration
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+
+  // Create file before initializing ApiRequestHandler
+  boost::filesystem::create_directories("../api_dir/create");
+  std::ofstream("../api_dir/create/asdf");
+
+  ApiRequestHandler handler("/api", handler_map["/api"].second);
+
+  std::string method = "GET";
+  std::string requestURI = "/api/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {"Content-Type: application/json"};
+  std::string body = "{\"data\": \"sample data\"}";
+
+  http::request<http::string_body> req;
+  http::response<http::string_body> res;
+
+  makeRequestWithSpecifiedFields(req, method, requestURI, headers, body);
+
+  // Perform the API request handling
+  int result = handler.handle_request(req, res);
+
+  // Assert that the response indicates success
+  EXPECT_EQ(HTTP_STATUS_NOT_FOUND, result);
+  EXPECT_EQ(11, res.version());
+
+  // Delete test directory
   boost::filesystem::remove_all("../api_dir/create");
 }

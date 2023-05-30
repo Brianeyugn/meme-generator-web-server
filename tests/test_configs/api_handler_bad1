@@ -1,0 +1,27 @@
+port 8080; # port my server listens on
+
+location /static1 StaticHandler {
+  root ../data/data_etc;
+}
+
+location /static1/text StaticHandler {
+  root ../data/data_txt;
+}
+
+location /static1/images StaticHandler {
+  root ../data/data_img;
+}
+
+location /static2 StaticHandler {
+  root ../data;
+}
+
+location /api ApiHandler {
+  # DELIBERATELY MISSING ROOT FOR TESTING
+}
+
+location /echo EchoHandler {}
+
+location / ErrorHandler {}
+
+location /health HealthHandler {}

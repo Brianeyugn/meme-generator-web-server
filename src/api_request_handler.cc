@@ -365,7 +365,7 @@ int ApiRequestHandler::handle_request(http::request<http::string_body> req, http
 
   if (bad_) {
     log->LogError("ApiRequestHandler: handle_request: bad config given");
-    return handle_not_found(res);
+    return handle_bad_request(res);
   }
 
   boost::system::error_code ec;

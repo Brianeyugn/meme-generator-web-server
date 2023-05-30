@@ -66,7 +66,7 @@ int StaticRequestHandler::handle_request(http::request<http::string_body> req, h
 
   file_path = root_ + request_uri.substr(location_.length());
   log->LogInfo("StaticRequestHandler: Longest matched patch " + request_uri + " is " + location_ + "\n");
-  log->LogInfo("StaticRequstHandler: File path used is " + file_path + "\n");
+  log->LogInfo("StaticRequestHandler: File path used is " + file_path + "\n");
   std::ifstream istream(file_path, std::ios::in | std::ios::binary);
 
   if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
