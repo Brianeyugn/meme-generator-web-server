@@ -34,6 +34,7 @@ class ApiRequestHandler : public RequestHandler {
 
   bool bad_;
 
+  // the storage 2d map of the jsons. A json is accessed through name
   static std::unordered_map<std::string, std::unordered_map<int, JSONStruct>> json_storage_;
 };
 

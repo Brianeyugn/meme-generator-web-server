@@ -1,39 +1,48 @@
 #include "static_request_handler.h"
-#include "request_handler.h"
-#include "mime.h"
-#include "logging.h"
+
 #include <fstream> // For ifstream.
 #include <iostream>
 
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "request_handler.h"
+#include "mime.h"
+#include "logging.h"
+
 StaticRequestHandler::StaticRequestHandler(const std::string& path, NginxConfig* config)
   : RequestHandler(), location_(path) {
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("In StaticRequestHandler constructor");
   if (config->statements_.size() < 1) {
+    log->LogError("StaticRequestHandler constructor: location_ = " + path + " is missing statements in config");
     bad_ = true;
     return;
   }
   NginxConfigStatement* stmt = config->statements_[0].get();
   if (stmt->tokens_[0] != "root" || stmt->tokens_.size() != 2) {
+    log->LogError("StaticRequestHandler constructor: location_ = " + path + "is missing 'root' in config");
     bad_ = true;
     return;
   }
 
   root_ = stmt->tokens_[1];;
   bad_ = false;
+  log->LogInfo("StaticRequestHandler constructor: location_ = " + path + ", root = " + root_);
 }
 
 int StaticRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
+
   res.version(req.version());
 
   if (req.method_string() == "") {
+    log->LogError("StaticRequestHandler: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
 
   if (bad_) {
-    log->LogWarn("Bad config thrown");
+    log->LogError("StaticRequestHandler: handle_request: bad config given");
     return handle_not_found(res);
   }
 

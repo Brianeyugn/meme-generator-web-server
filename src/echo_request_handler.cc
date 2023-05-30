@@ -1,16 +1,25 @@
 #include "echo_request_handler.h"
-#include "request_handler.h"
 
 #include <boost/lexical_cast.hpp>
 
+#include "logging.h"
+#include "request_handler.h"
+
 EchoRequestHandler::EchoRequestHandler()
 	: RequestHandler() {
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("In EchoRequestHandler constructor");
 }
 
 int EchoRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
+  Logger *log = Logger::GetLogger();
+
   if (req.method_string() == "") {
+    log->LogError("EchoRequestHandler: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
+
+  log->LogInfo("EchoRequestHandler: handle_request: echoing incoming request");
 
   res.version(req.version());
   res.reason("OK");

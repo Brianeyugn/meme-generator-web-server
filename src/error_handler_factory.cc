@@ -2,8 +2,13 @@
 
 #include "logging.h"
 
-ErrorHandlerFactory::ErrorHandlerFactory() {};
+ErrorHandlerFactory::ErrorHandlerFactory() {
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("In ErrorRequestHandlerFactory constructor");
+};
 
 ErrorRequestHandler* ErrorHandlerFactory::create(std::string location, NginxConfig* conf) {
-    return new ErrorRequestHandler();
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("ErrorRequestHandlerFactory: create: creating new ErrorRequestHandler");
+  return new ErrorRequestHandler();
 }

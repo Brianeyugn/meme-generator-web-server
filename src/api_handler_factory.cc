@@ -1,7 +1,14 @@
 #include "request_factory.h"
 
-ApiRequestHandlerFactory::ApiRequestHandlerFactory() {};
+#include "logging.h"
+
+ApiRequestHandlerFactory::ApiRequestHandlerFactory() {
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("In ApiRequestHandlerFactory constructor");
+};
 
 ApiRequestHandler* ApiRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
-    return new ApiRequestHandler(location, conf);
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("ApiRequestHandlerFactory: create: creating new ApiRequestHandler");
+  return new ApiRequestHandler(location, conf);
 }

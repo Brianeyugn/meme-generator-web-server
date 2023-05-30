@@ -1,7 +1,14 @@
 #include "request_factory.h"
 
-EchoRequestHandlerFactory::EchoRequestHandlerFactory() {};
+#include "logging.h"
+
+EchoRequestHandlerFactory::EchoRequestHandlerFactory() {
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("In EchoRequestHandlerFactory constructor");
+};
 
 EchoRequestHandler* EchoRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
-    return new EchoRequestHandler();
+  Logger *log = Logger::GetLogger();
+  log->LogDebug("EchoRequestHandlerFactory: create: creating new EchoRequestHandler");
+  return new EchoRequestHandler();
 }

@@ -28,13 +28,16 @@ Logger::Logger() {
 
   logging::register_simple_formatter_factory<logging::trivial::severity_level, char>("Severity");
 
-  // Output logs to file
+  // Output logs to file (debug level is not written to file)
   logging::add_file_log(
     keywords::file_name = LOG_FILE_NAME,
     keywords::format = LOG_FILE_FORMAT,
     keywords::rotation_size = 10 * 1024 * 1024, // Rotate after 10Mb
     keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0), // New log after midnight
-    keywords::auto_flush = true);
+    keywords::auto_flush = true
+  )->set_filter(
+    logging::trivial::severity >= logging::trivial::info
+  );
 
   // Output logs to console
   logging::add_console_log(

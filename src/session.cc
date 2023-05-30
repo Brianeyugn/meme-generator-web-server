@@ -92,6 +92,11 @@ void RealSession::HandleRead(const boost::system::error_code& error,
     NginxConfig* conf = handler_map_[location].second;
     RequestHandler* handler = factory->create(location, conf);
     status = handler->handle_request(req, res);
+    log->LogInfo("[ResponseMetrics] Response-Code " + std::to_string(status)
+    + "; Request-Path " + target
+    + "; Request-IP " + client_ip_
+    + "; Matched-Handler " + location
+    + ";");
   }
 
   memset(data_, 0, sizeof(data_));
