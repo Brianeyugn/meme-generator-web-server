@@ -211,6 +211,20 @@ test_health() {
   return $status
 }
 
+test_missing_method() {
+  INPUT="http_requests/missing_method_request"
+  EXPECTED_OUTPUT="http_responses/expected_missing_method_response"
+
+  cat "${INPUT}" | nc -q 1 "${SERVER_IP}" "${SERVER_PORT}" > "${OUTPUT_FILE}"
+  diff "${EXPECTED_OUTPUT}" "${OUTPUT_FILE}"
+
+  status=$?
+
+  rm "${OUTPUT_FILE}"
+
+  return $status
+}
+
 main() {
   # Populate array with tests we want to run (one test per line)
   test_functions=(
@@ -226,6 +240,7 @@ main() {
     test_api_delete
     test_multithreading
     test_health
+    test_missing_method
   )
 
   # Start the server
