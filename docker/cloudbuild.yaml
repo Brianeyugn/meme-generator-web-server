@@ -27,7 +27,7 @@ steps:
   args: [
     'build',
     '-f', 'docker/coverage.Dockerfile',
-    '-t', 'gcr.io/$PROJECT_ID/goofy-googlers-server:latest',
+    '-t', 'gcr.io/$PROJECT_ID/goofy-googlers-server:coverage',
     '.'
   ]
-images: ['gcr.io/$PROJECT_ID/goofy-googlers-server:base', 'gcr.io/$PROJECT_ID/goofy-googlers-server:latest']
+images: ['gcr.io/$PROJECT_ID/goofy-googlers-server:base', 'gcr.io/$PROJECT_ID/goofy-googlers-server:latest', 'gcr.io/$PROJECT_ID/goofy-googlers-server:coverage']
