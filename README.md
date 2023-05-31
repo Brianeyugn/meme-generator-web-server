@@ -9,9 +9,14 @@
 - [Layout](#layout)
     - [`server.h`](#serverh)
     - [`session.h`](#sessionh)
+    - [`request_factory.h`](#request_factoryh)
     - [`request_handler.h`](#request_handlerh)
+    - [`api_request_handler.h`](#api_request_handlerh)
     - [`static_request_handler.h`](#static_request_handlerh)
     - [`echo_request_handler.h`](#echo_request_handlerh)
+    - [`error_request_handler.h`](#error_request_handlerh)
+    - [`health_request_handler.h`](#health_request_handlerh)
+    - [`mime.h`](#mimeh)
     - [`config_parser.h`](#config_parserh)
     - [`logging.h`](#loggingh)
 - [Building](#building)
@@ -36,9 +41,14 @@ It links together the port and config with Boost IO, and initializes a session.
 
 The Session class handles client connections and processes HTTP requests. It reads data from the socket, parses the request string, and determines the appropriate request handler based on configured routes. It generates a response string and writes it back to the client. The server configuration file is parsed to extract URL prefixes and handler types, which are used to create request handler factories. The Session class is responsible for coordinating the request handling process.
 
+### `request_factory.h`
+
+This header defines the factory pattern used for creating all of our request handlers.
+Memory for each specific handler is allocated in its respective `create` function.
+
 ### `request_handler.h`
 
-The RequestHandler class is an abstract class that provides a base implementation for handling HTTP requests. It defines common methods and properties for request handling.
+The `RequestHandler` class is an abstract class that provides a base implementation for handling HTTP requests. It defines common methods and properties for request handling.
 
 Key Features:
 
@@ -47,15 +57,32 @@ Key Features:
 	Supports conversion between request/response objects and string representations.
 	Includes a Status struct to represent request status.
 
-To implement custom request handlers, include the RequestHandler header file and derive your classes from it.
+To implement custom request handlers, include the `RequestHandler` header file and derive your classes from it.
+
+### `api_request_handler.h`
+
+The `ApiRequestHandler` class inherits from the abstract `RequestHandler` class.
+Its request handling function is split into five components, allowing the user to list, create, read, update, and delete JSON files.
 
 ### `static_request_handler.h`
 
-This class inherits from `RequestHandler`, and overwrites the `ParseRequest` method to search for the requested static file, and return it if it exists.
+This class also inherits from `RequestHandler`, and overwrites the `ParseRequest` method to search for the requested static file, and return it if it exists.
 
 ### `echo_request_handler.h`
 
-This class also inherits from `RequestHandler`, and overwrites the `ParseRequest` method to just echo back the incoming request.
+This class inherits from `RequestHandler`, and overwrites the `ParseRequest` method to just echo back the incoming request.
+
+### `error_request_handler.h`
+
+This class inherits from `RequestHandler`, and simply returns an HTTP 404 not found error.
+
+### `health_request_handler.h`
+
+This class inherits from `RequestHandler`, and simply returns an HTTP 200 OK response.
+
+### `mime.h`
+
+This header is simply a mapping from file extensions to HTTP content types.
 
 ### `config_parser.h`
 
@@ -96,7 +123,11 @@ location static_url StaticHandler {
 
 Note that we start with the parent directory since we intend for the server to be run inside `build/`.
 
-Echo and 404 handlers do not need any information in their subconfigs.
+API handlers work similarly to static ones.
+The URL location is specified after the `location` keyword, and the local directory is specified with the `root` keyword.
+This local directory will store JSON files that users can upload, read, modify, and delete.
+
+Echo, error, and health handlers do not need any information in their subconfigs.
 
 ### For Production
 
@@ -171,14 +202,3 @@ Submit a pull request, describing the changes you have made and the problem they
 If you have any questions or need assistance with your contribution, feel free to reach out to us.
 
 We appreciate your contribution and look forward to your involvement in improving the GoofyGooglerServer project!
-
-
-
-
-
-
-
-
-
-
-
