@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include <chrono>
 #include <map>
 #include <string>
 
@@ -30,3 +31,24 @@ TEST_F(ServerTest, StartAcceptSuccess) {
   EXPECT_TRUE(result);
 }
 
+TEST_F(ServerTest, StartAcceptWithHandlersSuccess) {
+  NginxConfig *config = nullptr;
+  handler_map["EchoHandler"] = std::make_pair("EchoHandler", config);
+  handler_map["StaticHandler"] = std::make_pair("StaticHandler", config);
+  handler_map["ErrorHandler"] = std::make_pair("ErrorHandler", config);
+  handler_map["ApiHandler"] = std::make_pair("ApiHandler", config);
+  handler_map["HealthHandler"] = std::make_pair("HealthHandler", config);
+  handler_map["NonexistentHandler"] = std::make_pair("NonexistentHandler", config);
+
+  Server s(io_service, port, handler_map);
+  bool result = s.StartAccept();
+  EXPECT_TRUE(result);
+}
+
+TEST_F(ServerTest, StartServer) {
+  std::chrono::seconds rel_time(1);
+  Server s(io_service, port, handler_map);
+  s.StartAccept();
+  int result = io_service.run_for(rel_time);
+  EXPECT_EQ(result, 0);
+}

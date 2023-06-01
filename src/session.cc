@@ -43,9 +43,9 @@ tcp::socket& RealSession::Socket() {
 void RealSession::Start() {
   client_ip_ = socket_.remote_endpoint().address().to_string();
   socket_.async_read_some(boost::asio::buffer(data_, max_length),
-      boost::bind(&RealSession::HandleRead, this,
-          boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
+    boost::bind(&RealSession::HandleRead, this,
+      boost::asio::placeholders::error,
+      boost::asio::placeholders::bytes_transferred));
 }
 
 void RealSession::HandleRead(const boost::system::error_code& error,
@@ -78,7 +78,7 @@ void RealSession::HandleRead(const boost::system::error_code& error,
 
   http::response<http::string_body> res;
 
-  if ((ec && ec != http::error::bad_version)) {
+  if (ec && ec != http::error::bad_version) {
     res.result(400);
     res.reason("Bad Request");
   } else {

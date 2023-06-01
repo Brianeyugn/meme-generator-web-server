@@ -2,47 +2,47 @@
 #include "gtest/gtest.h"
 
 class MimeTest : public ::testing::Test {
-    protected:
-        std::string fileExt; 
-        Mime mime; 
+  protected:
+    std::string fileExt; 
+    Mime mime; 
 };
 
 TEST_F(MimeTest, txtExt) {
-    fileExt = "txt"; 
-    EXPECT_EQ("text/plain", mime.getContentType(fileExt)); 
+  fileExt = "txt"; 
+  EXPECT_EQ("text/plain", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, htmExt) {
-    fileExt = "htm"; 
-    EXPECT_EQ("text/html", mime.getContentType(fileExt)); 
+  fileExt = "htm"; 
+  EXPECT_EQ("text/html", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, htmlExt) {
-    fileExt = "html"; 
-    EXPECT_EQ("text/html", mime.getContentType(fileExt)); 
+  fileExt = "html"; 
+  EXPECT_EQ("text/html", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, jpgExt) {
-    fileExt = "jpg"; 
-    EXPECT_EQ("image/jpeg", mime.getContentType(fileExt)); 
+  fileExt = "jpg"; 
+  EXPECT_EQ("image/jpeg", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, jpegExt) {
-    fileExt = "jpeg"; 
-    EXPECT_EQ("image/jpeg", mime.getContentType(fileExt)); 
+  fileExt = "jpeg"; 
+  EXPECT_EQ("image/jpeg", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, pngExt) {
-    fileExt = "png"; 
-    EXPECT_EQ("image/png", mime.getContentType(fileExt)); 
+  fileExt = "png"; 
+  EXPECT_EQ("image/png", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, zipExt) {
-    fileExt = "zip"; 
-    EXPECT_EQ("application/zip", mime.getContentType(fileExt)); 
+  fileExt = "zip"; 
+  EXPECT_EQ("application/zip", mime.getContentType(fileExt)); 
 }
 
 TEST_F(MimeTest, ExtNotFound) {
-    fileExt = "ThisWillNeverBeAFileExtHopefully";
-    EXPECT_EQ("application/octet-stream", mime.getContentType(fileExt)); 
+  fileExt = "ThisWillNeverBeAFileExtHopefully";
+  EXPECT_EQ("application/octet-stream", mime.getContentType(fileExt)); 
 }

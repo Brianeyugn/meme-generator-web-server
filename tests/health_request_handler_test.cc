@@ -121,3 +121,24 @@ TEST_F(HealthRequestHandlerTest, GetRequestForHealth) {
   std::string head = strHeaders.substr(strHeaders.find("Content"));
   EXPECT_EQ(head, "Content-Type: text/plain\r\nContent-Length: 2\r\n\r\n");
 }
+
+TEST_F(HealthRequestHandlerTest, HandleRequestUnsupportedMethod) {
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+  HealthRequestHandler handler("/health", handler_map["/health"].second);
+  std::string method = "PUT";
+  std::string requestURI = "/health";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}

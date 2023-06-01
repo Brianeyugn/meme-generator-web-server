@@ -269,6 +269,28 @@ TEST_F(StaticRequestHandlerTest, GetRequestForNonexistentFile404Error) {
   EXPECT_EQ(res.result_int(), 404);
 }
 
+TEST_F(StaticRequestHandlerTest, HandleRequestUnsupportedMethod) {
+  bool success = config_parser.Parse("test_configs/config_testing", &config);
+  config.populateHandlerMap(handler_map);
+  StaticRequestHandler handler("/static1", handler_map["/static1"].second);
+  std::string method = "PUT";
+  std::string requestURI = "/static1/fileThatDoesNotExist";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_OK);
+}
+
 // TODO: FIX TEST
 // TEST_F(StaticRequestHandlerTest, NonGetRequestGetsAnEchoResponseSinceNotYetHandledByServer) {
 //   bool success = config_parser.Parse("test_configs/config_testing", &config);

@@ -48,7 +48,7 @@ class RealSession : public Session {
 
   void Start();
   tcp::socket& Socket();
-  
+
  private:
   void HandleRead(const boost::system::error_code& error, size_t bytes_transferred);
 
