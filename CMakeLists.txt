@@ -95,7 +95,7 @@ target_link_libraries(http_parser_test http_parser_lib gtest_main logging_lib Bo
 target_link_libraries(logging_test gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(mime_test mime_lib gtest_main)
 target_link_libraries(request_handler_test handler_lib gtest_main)
-target_link_libraries(server_test server_lib session_lib echo_request_lib static_request_lib error_request_lib api_request_lib health_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib health_handler_factory_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(server_test server_lib session_lib echo_request_lib static_request_lib error_request_lib api_request_lib health_request_lib meme_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib health_handler_factory_lib meme_handler_factory_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(session_test session_lib echo_request_lib static_request_lib error_request_lib config_parser_lib gtest_main gmock_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(static_handler_test static_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log mime_lib)
 

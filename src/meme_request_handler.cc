@@ -44,27 +44,19 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
 
   res.version(req.version());
 
-  if (req.method_string() == "") {
-    log->LogError("MemeRequestHandler :: handle_request: missing HTTP method");
+  if (bad_) {
+    log->LogError("ApiRequestHandler :: handle_request: bad config given");
     return handle_bad_request(res);
   }
 
-  if (req.method() == http::verb::get) {
-    log->LogInfo("MemeRequestHandler :: handle_request: responding to meme form request");
+  int ret_code = 0;
+  std::string request_uri(req.target().begin(), req.target().end());
+  std::string file_path = images_root_ + request_uri.substr(location_.length());
 
-    res.reason("OK");
-    res.result(HTTP_STATUS_OK);
-    res.set(http::field::content_type, "text/plain");
+  std::cout << request_uri << std::endl;
+  std::cout << file_path << std::endl;
 
-    std::string const string_headers = boost::lexical_cast<std::string>(req.base());
-    std::string body;
-    body += string_headers;
-    body += req.body();
-    res.body() = "OK";
-    res.set(http::field::content_length, std::to_string(res.body().size()));
-    return HTTP_STATUS_OK;
-  }
-  
-  log->LogError("MemeRequestHandler :: handle_request: wrong HTTP method");
-  return handle_bad_request(res);
+
+
+  return ret_code;
 }
