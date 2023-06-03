@@ -4,11 +4,11 @@
 
 HealthRequestHandlerFactory::HealthRequestHandlerFactory() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In HealthRequestHandlerFactory constructor");
+  log->LogDebug("HealthRequestHandlerFactory :: HealthRequestHandlerFactory: in constructor");
 };
 
 HealthRequestHandler* HealthRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("HealthRequestHandlerFactory: create: creating new HealthRequestHandler");
+  log->LogDebug("HealthRequestHandlerFactory :: create: creating new HealthRequestHandler");
   return new HealthRequestHandler(location, conf);
 }

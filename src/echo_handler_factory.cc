@@ -4,11 +4,11 @@
 
 EchoRequestHandlerFactory::EchoRequestHandlerFactory() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In EchoRequestHandlerFactory constructor");
+  log->LogDebug("EchoRequestHandlerFactory :: EchoRequestHandlerFactory: in constructor");
 };
 
 EchoRequestHandler* EchoRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("EchoRequestHandlerFactory: create: creating new EchoRequestHandler");
+  log->LogDebug("EchoRequestHandlerFactory :: create: creating new EchoRequestHandler");
   return new EchoRequestHandler();
 }

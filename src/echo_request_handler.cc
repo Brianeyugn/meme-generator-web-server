@@ -8,18 +8,18 @@
 EchoRequestHandler::EchoRequestHandler()
 	: RequestHandler() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In EchoRequestHandler constructor");
+  log->LogDebug("EchoRequestHandler :: EchoRequestHandler: in constructor");
 }
 
 int EchoRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger *log = Logger::GetLogger();
 
   if (req.method_string() == "") {
-    log->LogError("EchoRequestHandler: handle_request: missing HTTP method");
+    log->LogError("EchoRequestHandler :: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
 
-  log->LogInfo("EchoRequestHandler: handle_request: echoing incoming request");
+  log->LogInfo("EchoRequestHandler :: handle_request: echoing incoming request");
 
   res.version(req.version());
   res.reason("OK");

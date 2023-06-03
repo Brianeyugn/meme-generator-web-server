@@ -71,13 +71,13 @@ int main(int argc, char* argv[]) {
     // Join threads that are finished
     for (int thread_num = 0; thread_num < SERVER_MAX_THREADS; thread_num++) {
       threads[thread_num].join();
-      log->LogDebug("Joining thread: " + std::to_string(thread_num));
+      log->LogDebug("Server main: joining thread: " + std::to_string(thread_num));
     }
 
-    log->LogInfo("Stopping Server");
+    log->LogInfo("Server main: stopping server");
   } catch (std::exception& e) {
     std::string error = e.what();
-    log->LogError("Exception: " + error);
+    log->LogError("Server main: exception: " + error);
   }
 
   delete log;

@@ -4,11 +4,11 @@
 
 ApiRequestHandlerFactory::ApiRequestHandlerFactory() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In ApiRequestHandlerFactory constructor");
+  log->LogDebug("ApiRequestHandlerFactory :: ApiRequestHandlerFactory: in constructor");
 };
 
 ApiRequestHandler* ApiRequestHandlerFactory::create(std::string location, NginxConfig* conf) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("ApiRequestHandlerFactory: create: creating new ApiRequestHandler");
+  log->LogDebug("ApiRequestHandlerFactory :: create: creating new ApiRequestHandler");
   return new ApiRequestHandler(location, conf);
 }

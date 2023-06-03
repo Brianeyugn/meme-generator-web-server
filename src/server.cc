@@ -8,17 +8,17 @@
 #include "config_parser.h"
 #include "logging.h"
 #include "session.h"
-#include "server.h"
 
 using boost::asio::ip::tcp;
 
 Server::Server(boost::asio::io_service& io_service, short port, 
-  std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map)
+               std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map)
   : io_service_(io_service),
-  acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
-  handler_map_(handler_map) {
+    acceptor_(io_service, tcp::endpoint(tcp::v4(), port)),
+    handler_map_(handler_map) {
   Logger *log = Logger::GetLogger();
-  log->LogInfo("Server running on port: " + std::to_string(port));
+  log->LogInfo("Server :: Server: running on port: " + std::to_string(port));
+
   std::map<std::string, std::pair<std::string, NginxConfig*>>::iterator it;
   for (it = handler_map_.begin(); it != handler_map_.end(); it++) {
     std::string handler_type = it->second.first;
@@ -26,9 +26,9 @@ Server::Server(boost::asio::io_service& io_service, short port,
     routes_[it->first] = createHandlerFactory(handler_type);
 
     if (routes_[it->first] == nullptr) {
-      log->LogWarn("createHandlerFactory failed");
+      log->LogWarn("Server :: Server: createHandlerFactory failed");
     } else {
-      log->LogInfo("createHandlerFactory success");
+      log->LogInfo("Server :: Server: createHandlerFactory success");
     }
   }
 }

@@ -6,11 +6,11 @@
 ErrorRequestHandler::ErrorRequestHandler()
   : RequestHandler() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In ErrorRequestHandler constructor");
+  log->LogDebug("ErrorRequestHandler :: ErrorRequestHandler: in constructor");
 }
 
 int ErrorRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger *log = Logger::GetLogger();
-  log->LogInfo("ErrorRequestHandler: handle_request: file not found");
+  log->LogInfo("ErrorRequestHandler :: handle_request: file not found");
   return handle_not_found(res);
 }

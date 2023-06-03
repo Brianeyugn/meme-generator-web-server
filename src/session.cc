@@ -24,18 +24,14 @@ namespace http = boost::beast::http;
 using boost::asio::ip::tcp;
 
 Session ::Session(boost::asio::io_service& io_service, 
-                std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map,
-                std::map<std::string, RequestHandlerFactory*> routes)
-        : socket_(io_service) {
-  handler_map_ = handler_map;
-  routes_ = routes;
-}
+                  std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map,
+                  std::map<std::string, RequestHandlerFactory*> routes)
+  : socket_(io_service), handler_map_(handler_map), routes_(routes) {}
 
 RealSession ::RealSession(boost::asio::io_service& io_service,
-                        std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map,
-                        std::map<std::string, RequestHandlerFactory*> routes)
-            : Session(io_service, handler_map, routes) {
-}
+                          std::map<std::string, std::pair<std::string, NginxConfig*>> handler_map,
+                          std::map<std::string, RequestHandlerFactory*> routes)
+  : Session(io_service, handler_map, routes) {}
 
 tcp::socket& RealSession::Socket() {
   return socket_;
@@ -50,17 +46,16 @@ void RealSession::Start() {
       boost::asio::placeholders::bytes_transferred));
 }
 
-void RealSession::HandleRead(const boost::system::error_code& error,
-    std::size_t bytes_transferred) {
+void RealSession::HandleRead(const boost::system::error_code& error, std::size_t bytes_transferred) {
   Logger *log = Logger::GetLogger();
 
   if (error) {
-    log->LogError("Read handler failed with error code: " + std::to_string(error.value()));
+    log->LogError("RealSession :: HandleRead: failed with error code: " + std::to_string(error.value()));
     delete this;
     return;
   }
 
-  log->LogDebug("Handling read");
+  log->LogDebug("RealSession :: HandleRead: handling read");
   bool request_found = false;
   std::string request_string;
 
@@ -89,7 +84,7 @@ void RealSession::HandleRead(const boost::system::error_code& error,
     }
 
     int status;
-    log->LogInfo("RealSession :: handle_read found longest match = " + location + "\n");
+    log->LogInfo("RealSession :: HandleRead: found longest match = " + location + "\n");
     RequestHandlerFactory* factory = routes_[location];
     NginxConfig* conf = handler_map_[location].second;
     RequestHandler* handler = factory->create(location, conf);
@@ -118,12 +113,12 @@ void RealSession::HandleWrite(const boost::system::error_code& error) {
   Logger *log = Logger::GetLogger();
 
   if (error) {
-    log->LogError("Write handler failed with error code: " + std::to_string(error.value()));
+    log->LogError("RealSession :: HandleWrite: write handler failed with error code: " + std::to_string(error.value()));
     delete this;
     return;
   } 
 
-  log->LogDebug("Handling write");
+  log->LogDebug("RealSession :: HandleWrite: handling write");
   socket_.async_read_some(boost::asio::buffer(data_, max_length),
     boost::bind(&RealSession::HandleRead, this,
       boost::asio::placeholders::error,
@@ -135,13 +130,13 @@ void RealSession::HandleWrite(const boost::system::error_code& error) {
 // Returns the response string.
 std::string RealSession::match(std::string request_uri) {
   Logger* log = Logger::GetLogger();
-  log->LogInfo("match :: request_uri = " + request_uri + "\n");
+  log->LogInfo("RealSession :: match: request_uri = " + request_uri + "\n");
   std::string res = "";
   int res_len = 0;
   std::map<std::string, RequestHandlerFactory*>::iterator it;
   for (it = routes_.begin(); it != routes_.end(); it++) {
     std::string location = it->first;
-    log->LogInfo("match :: location = " + location + "\n");
+    log->LogInfo("RealSession :: match: location = " + location + "\n");
     if (request_uri.substr(0, location.length()) == location &&
        (request_uri.length() == location.length() ||
         request_uri.at(location.length()) == '/')) {
@@ -151,6 +146,6 @@ std::string RealSession::match(std::string request_uri) {
         }
       }
   }
-  log->LogInfo("match :: result = " + res + "\n");
+  log->LogInfo("RealSession :: match: result = " + res + "\n");
   return res;
 }

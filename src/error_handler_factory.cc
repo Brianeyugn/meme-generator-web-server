@@ -4,11 +4,11 @@
 
 ErrorHandlerFactory::ErrorHandlerFactory() {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In ErrorRequestHandlerFactory constructor");
+  log->LogDebug("ErrorHandlerFactory :: ErrorHandlerFactory: in constructor");
 };
 
 ErrorRequestHandler* ErrorHandlerFactory::create(std::string location, NginxConfig* conf) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("ErrorRequestHandlerFactory: create: creating new ErrorRequestHandler");
+  log->LogDebug("ErrorRequestHandlerFactory :: create: creating new ErrorRequestHandler");
   return new ErrorRequestHandler();
 }

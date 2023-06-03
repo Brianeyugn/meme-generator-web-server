@@ -13,22 +13,22 @@
 StaticRequestHandler::StaticRequestHandler(const std::string& path, NginxConfig* config)
   : RequestHandler(), location_(path) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In StaticRequestHandler constructor");
+  log->LogDebug("StaticRequestHandler :: StaticRequestHandler: in constructor");
   if (config->statements_.size() < 1) {
-    log->LogError("StaticRequestHandler constructor: location_ = " + path + " is missing statements in config");
+    log->LogError("StaticRequestHandler :: StaticRequestHandler: location_ = " + path + " is missing statements in config");
     bad_ = true;
     return;
   }
   NginxConfigStatement* stmt = config->statements_[0].get();
   if (stmt->tokens_[0] != "root" || stmt->tokens_.size() != 2) {
-    log->LogError("StaticRequestHandler constructor: location_ = " + path + "is missing 'root' in config");
+    log->LogError("StaticRequestHandler :: StaticRequestHandler: location_ = " + path + "is missing 'root' in config");
     bad_ = true;
     return;
   }
 
   root_ = stmt->tokens_[1];;
   bad_ = false;
-  log->LogInfo("StaticRequestHandler constructor: location_ = " + path + ", root = " + root_);
+  log->LogInfo("StaticRequestHandler :: StaticRequestHandler: location_ = " + path + ", root = " + root_);
 }
 
 int StaticRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
@@ -37,12 +37,12 @@ int StaticRequestHandler::handle_request(http::request<http::string_body> req, h
   res.version(req.version());
 
   if (req.method_string() == "") {
-    log->LogError("StaticRequestHandler: handle_request: missing HTTP method");
+    log->LogError("StaticRequestHandler :: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
 
   if (bad_) {
-    log->LogError("StaticRequestHandler: handle_request: bad config given");
+    log->LogError("StaticRequestHandler :: handle_request: bad config given");
     return handle_not_found(res);
   }
 
@@ -65,8 +65,8 @@ int StaticRequestHandler::handle_request(http::request<http::string_body> req, h
   std::string file_path = request_uri;
 
   file_path = root_ + request_uri.substr(location_.length());
-  log->LogInfo("StaticRequestHandler: Longest matched patch " + request_uri + " is " + location_ + "\n");
-  log->LogInfo("StaticRequestHandler: File path used is " + file_path + "\n");
+  log->LogInfo("StaticRequestHandler :: handle_request: Longest matched patch " + request_uri + " is " + location_ + "\n");
+  log->LogInfo("StaticRequestHandler :: handle_request: File path used is " + file_path + "\n");
   std::ifstream istream(file_path, std::ios::in | std::ios::binary);
 
   if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {

@@ -12,23 +12,23 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
   : RequestHandler(), location_(path) {
   Logger *log = Logger::GetLogger();
 
-  log->LogDebug("In MemeRequestHandler constructor");
+  log->LogDebug("MemeRequestHandler :: MemeRequestHandler: in constructor");
     if (config->statements_.size() < 1) {
-    log->LogError("MemeRequestHandler constructor: location_ = " + path + " is missing statements in config");
+    log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + " is missing statements in config");
     bad_ = true;
     return;
   }
 
   NginxConfigStatement* memes_stmt = config->statements_[0].get();
   if (memes_stmt->tokens_[0] != "memes_root" || memes_stmt->tokens_.size() != 2) {
-    log->LogError("MemeRequestHandler constructor: location_ = " + path + "is missing 'memes_root' in config");
+    log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + "is missing 'memes_root' in config");
     bad_ = true;
     return;
   }
 
   NginxConfigStatement* images_stmt = config->statements_[1].get();
   if (images_stmt->tokens_[0] != "images_root" || images_stmt->tokens_.size() != 2) {
-    log->LogError("MemeRequestHandler constructor: location_ = " + path + "is missing 'images_root' in config");
+    log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + "is missing 'images_root' in config");
     bad_ = true;
     return;
   }
@@ -36,7 +36,7 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
   memes_root_ = memes_stmt->tokens_[1];
   images_root_ = images_stmt->tokens_[1];
   bad_ = false;
-  log->LogInfo("MemeRequestHandler constructor: location_ = " + path + ", memes_root = " + memes_root_ + ", images_root = " + images_root_);
+  log->LogInfo("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + ", memes_root = " + memes_root_ + ", images_root = " + images_root_);
 }
 
 int MemeRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
@@ -45,12 +45,12 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
   res.version(req.version());
 
   if (req.method_string() == "") {
-    log->LogError("MemeRequestHandler: handle_form_request: missing HTTP method");
+    log->LogError("MemeRequestHandler :: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
 
   if (req.method() == http::verb::get) {
-    log->LogInfo("MemeRequestHandler: handle_form_request: responding to meme form request");
+    log->LogInfo("MemeRequestHandler :: handle_request: responding to meme form request");
 
     res.reason("OK");
     res.result(HTTP_STATUS_OK);
@@ -65,6 +65,6 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
     return HTTP_STATUS_OK;
   }
   
-  log->LogError("MemeRequestHandler: handle_request: wrong HTTP method");
+  log->LogError("MemeRequestHandler :: handle_request: wrong HTTP method");
   return handle_bad_request(res);
 }

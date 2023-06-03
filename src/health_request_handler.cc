@@ -11,7 +11,7 @@
 HealthRequestHandler::HealthRequestHandler(const std::string& path, NginxConfig* config)
   : RequestHandler(), location_(path) {
   Logger *log = Logger::GetLogger();
-  log->LogDebug("In HealthRequestHandler constructor");
+  log->LogDebug("HealthRequestHandler :: HealthRequestHandler: in constructor");
 }
 
 int HealthRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
@@ -20,12 +20,12 @@ int HealthRequestHandler::handle_request(http::request<http::string_body> req, h
   res.version(req.version());
 
   if (req.method_string() == "") {
-    log->LogError("HealthRequestHandler: handle_request: missing HTTP method");
+    log->LogError("HealthRequestHandler :: handle_request: missing HTTP method");
     return handle_bad_request(res);
   }
 
   if (req.method() == http::verb::get) {
-    log->LogInfo("HealthRequestHandler: handle_request: responding to health check");
+    log->LogInfo("HealthRequestHandler :: handle_request: responding to health check");
 
     res.reason("OK");
     res.result(HTTP_STATUS_OK);
@@ -40,6 +40,6 @@ int HealthRequestHandler::handle_request(http::request<http::string_body> req, h
     return HTTP_STATUS_OK;
   }
   
-  log->LogError("HealthRequestHandler: handle_request: wrong HTTP method");
+  log->LogError("HealthRequestHandler :: handle_request: wrong HTTP method");
   return handle_bad_request(res);
 }
