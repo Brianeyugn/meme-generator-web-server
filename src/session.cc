@@ -13,10 +13,12 @@
 #include "config_parser.h"
 #include "echo_request_handler.h"
 #include "error_request_handler.h"
+#include "static_request_handler.h"
+#include "health_request_handler.h"
+#include "meme_request_handler.h"
 #include "logging.h"
 #include "request_factory.h"
 #include "request_handler.h"
-#include "static_request_handler.h"
 
 namespace http = boost::beast::http;
 using boost::asio::ip::tcp;

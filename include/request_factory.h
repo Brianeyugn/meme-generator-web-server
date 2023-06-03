@@ -13,6 +13,7 @@
 #include "request_handler.h"
 #include "static_request_handler.h"
 #include "health_request_handler.h"
+#include "meme_request_handler.h"
 
 class RequestHandlerFactory {
  public:
@@ -47,6 +48,12 @@ class HealthRequestHandlerFactory : public RequestHandlerFactory {
  public:
   HealthRequestHandlerFactory();
   HealthRequestHandler* create(std::string location, NginxConfig* conf);
+};
+
+class MemeRequestHandlerFactory : public RequestHandlerFactory {
+ public:
+  MemeRequestHandlerFactory();
+  MemeRequestHandler* create(std::string location, NginxConfig* conf);
 };
 
 #endif // GOOFYGOOGLERSSERVER_REQUEST_FACTORY_H_

@@ -78,5 +78,8 @@ RequestHandlerFactory* Server::createHandlerFactory(const std::string& name) {
   if (name == "HealthHandler") {
     return new HealthRequestHandlerFactory();
   }
+  if (name == "MemeHandler") {
+    return new MemeRequestHandlerFactory();
+  }
   return nullptr;
 }
