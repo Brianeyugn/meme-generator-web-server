@@ -79,6 +79,7 @@ add_executable(config_parser_test tests/config_parser_test.cc)
 add_executable(echo_handler_test tests/echo_request_handler_test.cc)
 add_executable(error_handler_test tests/error_request_handler_test.cc)
 add_executable(health_handler_test tests/health_request_handler_test.cc)
+add_executable(meme_handler_test tests/meme_request_handler_test.cc)
 add_executable(http_parser_test tests/http_parser_test.cc)
 add_executable(logging_test tests/logging_test.cc)
 add_executable(mime_test tests/mime_test.cc)
@@ -91,6 +92,7 @@ target_link_libraries(config_parser_test config_parser_lib gtest_main logging_li
 target_link_libraries(echo_handler_test echo_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(error_handler_test error_request_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(health_handler_test health_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(meme_handler_test meme_request_lib config_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(http_parser_test http_parser_lib gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(logging_test gtest_main logging_lib Boost::regex Boost::log_setup Boost::log)
 target_link_libraries(mime_test mime_lib gtest_main)
@@ -105,6 +107,7 @@ gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE
 gtest_discover_tests(echo_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(error_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(health_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(meme_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(http_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(logging_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(mime_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -118,8 +121,8 @@ add_test(NAME integration_tests COMMAND ${BASH_PROGRAM} ${CMAKE_CURRENT_SOURCE_D
 include(cmake/CodeCoverageReportConfig.cmake)
 generate_coverage_report(
     TARGETS
-        api_request_lib config_parser_lib echo_request_lib error_request_lib handler_lib health_request_lib http_parser_lib logging_lib mime_lib handler_lib server_lib server session_lib static_request_lib
+        api_request_lib config_parser_lib echo_request_lib error_request_lib handler_lib health_request_lib meme_request_lib http_parser_lib logging_lib mime_lib handler_lib server_lib server session_lib static_request_lib
         logging_test request_handler_test # these are so we can cover the inlined header functions
     TESTS
-        api_handler_test config_parser_test echo_handler_test error_handler_test health_handler_test http_parser_test logging_test mime_test request_handler_test server_test session_test static_handler_test
+        api_handler_test config_parser_test echo_handler_test error_handler_test health_handler_test meme_handler_test http_parser_test logging_test mime_test request_handler_test server_test session_test static_handler_test
 )

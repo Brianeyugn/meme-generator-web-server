@@ -20,7 +20,7 @@ class MemeRequestHandler : public RequestHandler {
   std::string location_; // Config-specified location
   std::string memes_created_root_; // Config-specified root
   std::string images_root_; // Config-specified root
-  std::string form_root_; // Config-specified root
+  std::string html_root_; // Config-specified root
 
   bool bad_;
 

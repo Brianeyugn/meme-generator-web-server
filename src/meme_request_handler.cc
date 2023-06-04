@@ -15,7 +15,7 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
   Logger *log = Logger::GetLogger();
 
   log->LogDebug("MemeRequestHandler :: MemeRequestHandler: in constructor");
-    if (config->statements_.size() < 1) {
+    if (config->statements_.size() < 3) {
     log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + " is missing statements in config");
     bad_ = true;
     return;
@@ -35,19 +35,19 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
     return;
   }
 
-  NginxConfigStatement* form_stmt = config->statements_[2].get();
-  if (form_stmt->tokens_[0] != "form_root" || form_stmt->tokens_.size() != 2) {
-    log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + " is missing 'form_root' in config");
+  NginxConfigStatement* html_stmt = config->statements_[2].get();
+  if (html_stmt->tokens_[0] != "html_root" || html_stmt->tokens_.size() != 2) {
+    log->LogError("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + " is missing 'html_root' in config");
     bad_ = true;
     return;
   }
 
   memes_created_root_ = memes_created_stmt->tokens_[1];
   images_root_ = images_stmt->tokens_[1];
-  form_root_ = form_stmt->tokens_[1];
+  html_root_ = html_stmt->tokens_[1];
   bad_ = false;
   log->LogInfo("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + ", created_memes_root = " + memes_created_root_ 
-                + ", images_root = " + images_root_ + ", form_root = " + form_root_);
+                + ", images_root = " + images_root_ + ", html_root = " + html_root_);
 
   // Store all image_root_ images into a map with coresponding id number.
   int id = 0;
@@ -67,7 +67,7 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
 
   log->LogInfo("MemeRequestHandler :: handle_form_request: responding to request for a html meme form");
   
-  std::string file_path = form_root_ + "/memes_form.html";
+  std::string file_path = html_root_ + "/form.html";
   std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
 
   log->LogInfo("MemeRequestHandler :: handle_form_request: File path used is " + file_path + "\n");
@@ -80,10 +80,10 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
                      (std::istreambuf_iterator<char>()));
 
     // Insert image options into html form
-    std::string sel_target = "<option>Select a template...</option>\n";
+    std::string sel_target = "<option>Select a template image...</option>\n";
     size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
     for (int i=0; i<image_map_.size(); i++) {
-      std::string insert_str = "      <option value=" + std::to_string(i) + ">" + image_map_[i] + "</option>\n";
+      std::string insert_str = "          <option value=" + std::to_string(i) + ">" + image_map_[i] + "</option>\n";
       body.insert(pos, insert_str);
       pos += insert_str.length();
     }

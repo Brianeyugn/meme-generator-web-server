@@ -1,0 +1,5 @@
+location /meme MemeHandler {
+  memes_created_root ../memes_dir/memes_created;
+  images_root ../memes_dir/memes_images;
+  hahaha ../hahaha # Missing html_root
+}
