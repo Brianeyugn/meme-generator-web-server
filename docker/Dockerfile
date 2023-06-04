@@ -24,6 +24,9 @@ COPY --from=builder /usr/src/project/configuration/docker.conf .
 # Copy static file content into deployment image
 COPY --from=builder /usr/src/project/data ./data
 
+# Copy meme images and database into deployment image
+COPY --from=builder /usr/src/project/memes_dir ./memes_dir
+
 EXPOSE 80
 
 # Use ENTRYPOINT to specify the binary name

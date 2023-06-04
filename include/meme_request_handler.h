@@ -24,6 +24,7 @@ class MemeRequestHandler : public RequestHandler {
 
   bool bad_;
 
+  std::string database_; // SQL database for storing memes
   std::map<int, std::string> image_map_; // Maps id to image_root_'s image
 };
 

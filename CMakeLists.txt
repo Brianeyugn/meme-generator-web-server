@@ -34,6 +34,11 @@ find_package(Boost 1.50 REQUIRED COMPONENTS system log_setup log)
 message(STATUS "Boost version: ${Boost_VERSION}")
 add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
 
+# Find SQLite3 library
+find_package(SQLite3 REQUIRED)
+include_directories(${SQLite3_INCLUDE_DIRS})
+message(STATUS "SQLite3 version: ${SQLite3_VERSION}")
+
 include_directories(include)
 
 # Locate bash program
@@ -68,9 +73,9 @@ target_link_libraries(echo_request_lib handler_lib)
 target_link_libraries(error_request_lib handler_lib)
 target_link_libraries(api_request_lib handler_lib Boost::filesystem mime_lib)
 target_link_libraries(health_request_lib handler_lib mime_lib)
-target_link_libraries(meme_request_lib handler_lib Boost::filesystem mime_lib)
+target_link_libraries(meme_request_lib handler_lib Boost::filesystem mime_lib ${SQLite3_LIBRARIES})
 target_link_libraries(session_lib http_parser_lib)
-target_link_libraries(server server_lib session_lib Boost::system pthread config_parser_lib echo_request_lib static_request_lib error_request_lib api_request_lib health_request_lib meme_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib health_handler_factory_lib meme_handler_factory_lib logging_lib Boost::regex Boost::log_setup Boost::log)
+target_link_libraries(server server_lib session_lib Boost::system pthread config_parser_lib echo_request_lib static_request_lib error_request_lib api_request_lib health_request_lib meme_request_lib echo_handler_factory_lib static_handler_factory_lib error_handler_factory_lib api_handler_factory_lib health_handler_factory_lib meme_handler_factory_lib logging_lib Boost::regex Boost::log_setup Boost::log ${SQLite3_LIBRARIES})
 target_link_libraries(mime_lib)
 
 # Test executable name, srcs, and deps

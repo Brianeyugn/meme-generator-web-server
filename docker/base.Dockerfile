@@ -16,4 +16,5 @@ RUN apt-get update && apt-get install -y \
     libgmock-dev \
     libgtest-dev \
     netcat \
-    gcovr
+    gcovr \
+    sqlite3
