@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <fstream> // For ifstream.
 #include <iostream>
+#include <shared_mutex>
 #include <string>
 
 #include <boost/filesystem.hpp>
@@ -15,12 +16,16 @@
 
 #define SQL_DATABASE_PATH "../memes_dir/meme.db"
 
+// Mutex for accessing meme.db on separate threads
+std::shared_mutex meme_lock;
+
 struct Meme {
   std::string top_text;
   std::string bottom_text;
   std::string image;
 };
 
+// Helpers
 void init_meme_database(std::string database_name) {
   Logger *log = Logger::GetLogger();
   sqlite3 *db;
@@ -34,6 +39,7 @@ void init_meme_database(std::string database_name) {
                             ")";
 
   // Create database object
+  std::unique_lock<std::shared_mutex> u_lock(meme_lock);
   int rc = sqlite3_open(database_name.c_str(), &db);
   if (rc != SQLITE_OK) {
     log->LogFatal("MemeRequestHandler :: init_meme_database: could not create/open SQL database: " + std::string(sqlite3_errmsg(db)));
@@ -53,6 +59,46 @@ void init_meme_database(std::string database_name) {
 
   log->LogInfo("MemeRequestHandler :: init_meme_database: opened SQL meme table");
   sqlite3_close(db);
+  u_lock.unlock();
+}
+
+void remove_sus_characters(std::string& s) {
+  std::replace(s.begin(), s.end(), '\\', '\0');
+  std::replace(s.begin(), s.end(), '\'', '\0');
+  std::replace(s.begin(), s.end(), '"', '\0');
+  std::replace(s.begin(), s.end(), '\n', '\0');
+  std::replace(s.begin(), s.end(), '\r', '\0');
+}
+
+void parse_meme_request(struct Meme& meme, const std::string& request) {
+  // The prompts that precede each input
+  const std::string top_text_prompt = "top_text=";
+  const std::string bottom_text_prompt = "bottom_text=";
+  const std::string meme_image_prompt = "image=";
+
+  // The delimiters between each input
+  int delimiter_1 = request.find("&" + bottom_text_prompt);
+  int delimiter_2 = request.find("&" + meme_image_prompt, delimiter_1 + 1);
+
+  // Grab the inputs beteween the prompts and delimiters
+  std::string top_text = request.substr(top_text_prompt.size(), delimiter_1 - top_text_prompt.size());
+  std::string bottom_text = request.substr(delimiter_1 + bottom_text_prompt.size() + 1, delimiter_2 - delimiter_1 - bottom_text_prompt.size() - 1);
+  std::string image = request.substr(delimiter_2 + meme_image_prompt.size() + 1);
+
+  // Replace input '+'s with spaces
+  std::replace(top_text.begin(), top_text.end(), '+', ' ');
+  std::replace(bottom_text.begin(), bottom_text.end(), '+', ' ');
+  std::replace(image.begin(), image.end(), '+', ' ');
+
+  // Sanitize input
+  remove_sus_characters(top_text);
+  remove_sus_characters(bottom_text);
+  remove_sus_characters(image);
+
+  // Update struct
+  meme.top_text = top_text;
+  meme.bottom_text = bottom_text;
+  meme.image = image;
 }
 
 MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* config)
@@ -153,46 +199,6 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
   return handle_bad_request(res);
 }
 
-void remove_sus_characters(std::string& s) {
-  std::replace(s.begin(), s.end(), '\\', '\0');
-  std::replace(s.begin(), s.end(), '\'', '\0');
-  std::replace(s.begin(), s.end(), '"', '\0');
-  std::replace(s.begin(), s.end(), '\n', '\0');
-  std::replace(s.begin(), s.end(), '\r', '\0');
-}
-
-void parse_meme_request(struct Meme& meme, const std::string& request) {
-  // The prompts that precede each input
-  const std::string top_text_prompt = "top_text=";
-  const std::string bottom_text_prompt = "bottom_text=";
-  const std::string meme_image_prompt = "image=";
-
-  // The delimiters between each input
-  int delimiter_1 = request.find("&" + bottom_text_prompt);
-  int delimiter_2 = request.find("&" + meme_image_prompt, delimiter_1 + 1);
-
-  // Grab the inputs beteween the prompts and delimiters
-  std::string top_text = request.substr(top_text_prompt.size(), delimiter_1 - top_text_prompt.size());
-  std::string bottom_text = request.substr(delimiter_1 + bottom_text_prompt.size() + 1, delimiter_2 - delimiter_1 - bottom_text_prompt.size() - 1);
-  std::string image = request.substr(delimiter_2 + meme_image_prompt.size() + 1);
-
-  // Replace input '+'s with spaces
-  std::replace(top_text.begin(), top_text.end(), '+', ' ');
-  std::replace(bottom_text.begin(), bottom_text.end(), '+', ' ');
-  std::replace(image.begin(), image.end(), '+', ' ');
-
-  // Sanitize input
-  remove_sus_characters(top_text);
-  remove_sus_characters(bottom_text);
-  remove_sus_characters(image);
-
-  // Update struct
-  meme.top_text = top_text;
-  meme.bottom_text = bottom_text;
-  meme.image = image;
-}
-
-// TODO: make thread-safe
 int MemeRequestHandler::handle_create(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
 
@@ -213,6 +219,7 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
                                    "(image, top, bottom) "
                                    "VALUES (" + meme.image + ", \"" + meme.top_text + "\", \"" + meme.bottom_text + "\")";
 
+  std::unique_lock<std::shared_mutex> u_lock(meme_lock);
   int rc = sqlite3_open(database_.c_str(), &db);
   if (rc != SQLITE_OK) {
     log->LogError("MemeRequestHandler :: handle_create: could not open SQL database: " + std::string(sqlite3_errmsg(db)));
@@ -229,6 +236,9 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
     return handle_internal_server_error(res);
   }
 
+  sqlite3_close(db);
+  u_lock.unlock();
+
   // Get meme ID number
   int meme_id = 0;
   const std::string get_query = "SELECT id FROM meme_table "
@@ -236,6 +246,7 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
                                 "AND top = \"" + meme.top_text + "\" "
                                 "AND bottom = \"" + meme.bottom_text + "\"";
 
+  u_lock.lock();
   rc = sqlite3_open(database_.c_str(), &db);
   if (rc != SQLITE_OK) {
     log->LogError("MemeRequestHandler :: handle_create: could not open SQL database: " + std::string(sqlite3_errmsg(db)));
@@ -264,6 +275,7 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
   }
 
   sqlite3_close(db);
+  u_lock.unlock();
 
   // Return HTTP response
   std::string body = "Created meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
@@ -304,7 +316,7 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
   } else if (request_uri == "/meme/create") {
     ret_code = handle_create(req, res);
   } else if (request_uri == "memes/view") {
-    // Handle listing of created memes
+    // Handle viewing of created memes
     ret_code = 0;
   } else if (request_uri == "memes/list") {
     // Handle listing of created memes
