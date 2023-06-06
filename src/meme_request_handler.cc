@@ -40,6 +40,7 @@ void init_meme_database(std::string database_name) {
                             ")";
 
   // Create database object
+  log->LogDebug("MemeRequestHandler :: init_meme_database: locking thread for writing");
   std::unique_lock<std::shared_mutex> u_lock(meme_lock);
   int rc = sqlite3_open(database_name.c_str(), &db);
   if (rc != SQLITE_OK) {
@@ -60,6 +61,7 @@ void init_meme_database(std::string database_name) {
 
   log->LogInfo("MemeRequestHandler :: init_meme_database: opened SQL meme table");
   sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: handle_create: unlocking thread");
   u_lock.unlock();
 }
 
@@ -142,6 +144,12 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
                 + ", images_root = " + images_root_ + ", html_root = " + html_root_);
   database_ = memes_created_root_ + SQL_DATABASE_FILE;
 
+  // Create directory if it doesn't already exist
+  if (!boost::filesystem::exists(memes_created_root_)) {
+    log->LogInfo("MemeRequestHandler :: MemeRequestHandler: path " + memes_created_root_ + " does not exist, creating now");
+    boost::filesystem::create_directories(memes_created_root_);
+  }
+
   // Store all image_root_ images into a map with coresponding id number.
   int id = 0;
   boost::filesystem::directory_iterator end_itr;
@@ -204,9 +212,20 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
 int MemeRequestHandler::handle_create(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
 
+  if (req.body() == "") {
+    log->LogError("MemeRequestHandler :: handle_create: request was sent with an empty body");
+    return handle_bad_request(res);
+  }
+
   // Extract image, top text, and bottom text
   Meme meme;
-  parse_meme_request(meme, req.body());
+  try {
+    parse_meme_request(meme, req.body());
+  } catch (std::exception& e) {
+    std::string error = e.what();
+    log->LogError("MemeRequestHandler :: handle_create: error parsing request body: " + error);
+    return handle_bad_request(res);
+  }
 
   log->LogInfo("MemeRequestHandler :: handle_create: creating meme with top text: '"
                + meme.top_text + "', bottom text: '"
@@ -221,10 +240,11 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
                                    "(image, top, bottom) "
                                    "VALUES (" + meme.image + ", \"" + meme.top_text + "\", \"" + meme.bottom_text + "\")";
 
+  log->LogDebug("MemeRequestHandler :: handle_create: locking thread for writing");
   std::unique_lock<std::shared_mutex> u_lock(meme_lock);
   int rc = sqlite3_open(database_.c_str(), &db);
   if (rc != SQLITE_OK) {
-    log->LogError("MemeRequestHandler :: handle_create: could not open SQL database: " + std::string(sqlite3_errmsg(db)));
+    log->LogError("MemeRequestHandler :: handle_create: could not open SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
@@ -232,13 +252,14 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
   char *error_message;
   log->LogDebug("MemeRequestHandler :: handle_create: executing SQL query: " + insert_query);
   rc = sqlite3_exec(db, insert_query.c_str(), 0, 0, &error_message);
-  if (rc != SQLITE_OK) {
-    log->LogError("MemeRequestHandler :: handle_create: could not execute SQL query: " + std::string(error_message));
+  if (rc != SQLITE_OK && rc != SQLITE_CONSTRAINT) {
+    log->LogError("MemeRequestHandler :: handle_create: could not execute SQL query (errno " + std::to_string(rc) + "): " + std::string(error_message));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
 
   sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: handle_create: unlocking thread");
   u_lock.unlock();
 
   // Get meme ID number
@@ -248,10 +269,11 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
                                 "AND top = \"" + meme.top_text + "\" "
                                 "AND bottom = \"" + meme.bottom_text + "\"";
 
+  log->LogDebug("MemeRequestHandler :: handle_create: locking thread for writing");
   u_lock.lock();
   rc = sqlite3_open(database_.c_str(), &db);
   if (rc != SQLITE_OK) {
-    log->LogError("MemeRequestHandler :: handle_create: could not open SQL database: " + std::string(sqlite3_errmsg(db)));
+    log->LogError("MemeRequestHandler :: handle_create: could not open SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
@@ -261,7 +283,7 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
   log->LogDebug("MemeRequestHandler :: handle_create: executing SQL query: " + get_query);
   rc = sqlite3_step(statement);
   if (rc != SQLITE_ROW && rc != SQLITE_DONE) {
-    log->LogError("MemeRequestHandler :: handle_create: could not evaluate SQL query: " + std::string(sqlite3_errmsg(db)));
+    log->LogError("MemeRequestHandler :: handle_create: could not evaluate SQL query (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
@@ -271,12 +293,13 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
 
   rc = sqlite3_finalize(statement);
   if (rc != SQLITE_OK) {
-    log->LogError("MemeRequestHandler :: handle_create: could not get meme ID from SQL database: " + std::string(sqlite3_errmsg(db)));
+    log->LogError("MemeRequestHandler :: handle_create: could not get meme ID from SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
 
   sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: handle_create: unlocking thread");
   u_lock.unlock();
 
   // Return HTTP response
