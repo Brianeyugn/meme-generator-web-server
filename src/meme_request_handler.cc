@@ -317,6 +317,64 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
   return HTTP_STATUS_OK;
 }
 
+int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, http::response<http::string_body>& res) {
+  Logger* log = Logger::GetLogger();
+
+  if (req.body() == "") {
+    log->LogError("MemeRequestHandler :: handle_retrieve: request was sent with an empty body");
+    return handle_bad_request(res);
+  }
+
+  // TODO: Extract the desired id from the request
+  int meme_id = 0;
+
+  // TODO: Retrieve meme via SQL
+  Meme meme;
+  sqlite3 *db;
+  sqlite3_stmt *statement;
+
+  const auto retrieve_query = "SELECT (image, top, bottom) FROM meme_table "
+                              "WHERE id = \"" + std::to_string(meme_id) + "\"";
+
+  // TODO: Figure out how the locking works and if it's necessary for this
+  log->LogDebug("MemeRequestHandler :: handle_retrieve: locking thread for reading");
+  std::shared_lock<std::shared_mutex> s_lock(meme_lock);
+  int rc = sqlite3_open(database_.c_str(), &db);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: handle_retrieve: could not open SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  char *error_message;
+  log->LogDebug("MemeRequestHandler :: handle_retrieve: executing SQL query: " + retrieve_query);
+  rc = sqlite3_exec(db, retrieve_query.c_str(), 0, 0, &error_message);
+  if (rc != SQLITE_OK && rc != SQLITE_CONSTRAINT) {
+    log->LogError("MemeRequestHandler :: handle_retrieve: could not execute SQL query (errno " + std::to_string(rc) + "): " + std::string(error_message));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: handle_retrieve: unlocking thread");
+  s_lock.unlock();
+
+  // TODO: Return HTTP response with two texts and image
+  std::string body = "Created meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
+
+  int content_length = body.length();
+  const std::string content_type = "text/html";
+
+  res.set(http::field::content_length, std::to_string(content_length));
+  res.set(http::field::content_type, content_type);
+
+  res.reason("OK");
+  res.result(HTTP_STATUS_OK);
+  res.body() = body;
+
+  return HTTP_STATUS_OK;
+}
+
 int MemeRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
 
@@ -341,7 +399,7 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
     ret_code = handle_create(req, res);
   } else if (request_uri == "memes/view") {
     // Handle viewing of created memes
-    ret_code = 0;
+    ret_code = handle_retrieve(req, res);
   } else if (request_uri == "memes/list") {
     // Handle listing of created memes
     ret_code = 0;
