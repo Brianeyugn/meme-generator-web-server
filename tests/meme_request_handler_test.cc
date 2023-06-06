@@ -13,9 +13,9 @@
 namespace fs = boost::filesystem;
 
 
-#define CREATED_PATH "../tests/test_meme_dir/memes_created"
-#define IMAGE_PATH "../tests/test_meme_dir/memes_images"
-#define HTML_PATH "../tests/test_meme_dir/memes_html"
+#define CREATED_PATH "../tests/test_memes_dir/memes_created"
+#define IMAGE_PATH "../tests/test_memes_dir/memes_images"
+#define HTML_PATH "../tests/test_memes_dir/memes_html"
 
 class MemeRequestHandlerTest : public ::testing::Test {
  public:

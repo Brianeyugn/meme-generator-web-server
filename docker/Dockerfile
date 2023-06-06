@@ -27,6 +27,9 @@ COPY --from=builder /usr/src/project/data ./data
 # Copy meme images and database into deployment image
 COPY --from=builder /usr/src/project/memes_dir ./memes_dir
 
+# Copy tests into deployment image (including meme images for test_memes_dir)
+COPY --from=builder /usr/src/project/tests ./tests
+
 EXPOSE 80
 
 # Use ENTRYPOINT to specify the binary name

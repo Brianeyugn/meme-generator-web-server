@@ -1,5 +1,5 @@
 location /meme MemeHandler {
-  memes_created_root ../tests/test_meme_dir/memes_created;
-  images_root ../tests/test_meme_dir/memes_images;
-  html_root ../tests/test_meme_dir/memes_html;
+  memes_created_root ../tests/test_memes_dir/memes_created;
+  images_root ../tests/test_memes_dir/memes_images;
+  html_root ../tests/test_memes_dir/memes_html;
 }
