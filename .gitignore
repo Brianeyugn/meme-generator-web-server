@@ -6,3 +6,4 @@ mirror
 logs
 mnt
 api_dir
+*.db

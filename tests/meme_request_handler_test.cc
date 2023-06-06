@@ -1,11 +1,38 @@
 #include "meme_request_handler.h"
-#include "request_handler.h"
-#include "config_parser.h"
+
 #include <string>
+#include <iostream>
+
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
 #include "gtest/gtest.h"
 
+#include "request_handler.h"
+#include "config_parser.h"
+
+namespace fs = boost::filesystem;
+
+
+#define CREATED_PATH "../tests/test_meme_dir/memes_created"
+#define IMAGE_PATH "../tests/test_meme_dir/memes_images"
+#define HTML_PATH "../tests/test_meme_dir/memes_html"
+
 class MemeRequestHandlerTest : public ::testing::Test {
+ public:
+  MemeRequestHandlerTest() {
+    // Create meme.db
+    fs::path db_path(std::string(CREATED_PATH) + "/meme.db");
+    fs::ofstream file(db_path);
+  }
+
+  ~MemeRequestHandlerTest() {
+    // Cleanup meme.db
+    fs::path db_path(std::string(CREATED_PATH) + "/meme.db");
+    if (fs::exists(db_path)) {
+      fs::remove(db_path);
+    }
+  }
+
  protected:
   NginxConfigParser config_parser;
   NginxConfig config;
@@ -146,11 +173,8 @@ TEST_F(MemeRequestHandlerTest, HandleFormRequest) {
   MemeRequestHandler handler("/meme", handler_map["/meme"].second);
   std::string method = "GET";
   std::string requestURI = "/meme";
-  std::string httpVersion = "HTTP/1.1";
   std::vector<std::string> headers = {};
   std::string body = "";
-  std::string reqStr = makeRequestStringWithSpecifiedFields(
-    method, requestURI, httpVersion, headers, body);
   
   http::request<http::string_body>req;
   makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
@@ -167,14 +191,13 @@ TEST_F(MemeRequestHandlerTest, HandleCreate) {
   MemeRequestHandler handler("/meme", handler_map["/meme"].second);
   std::string method = "POST";
   std::string requestURI = "/meme/create";
-  std::string httpVersion = "HTTP/1.1";
   std::vector<std::string> headers = {};
-  std::string body = "";
-  std::string reqStr = makeRequestStringWithSpecifiedFields(
-    method, requestURI, httpVersion, headers, body);
-  
+  std::string body = "top_text=gggg&bottom_text=hhhh&image=0";
+
   http::request<http::string_body>req;
   makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  std::cout << "hellO" << std::endl;
 
   http::response<http::string_body>res;
   handler.handle_request(req,res);

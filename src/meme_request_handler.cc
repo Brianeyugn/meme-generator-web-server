@@ -14,7 +14,8 @@
 #include "mime.h"
 #include "request_handler.h"
 
-#define SQL_DATABASE_PATH "../memes_dir/meme.db"
+#define HTML_FORM_FILE "/form.html"
+#define SQL_DATABASE_FILE "/meme.db"
 
 // Mutex for accessing meme.db on separate threads
 std::shared_mutex meme_lock;
@@ -102,7 +103,7 @@ void parse_meme_request(struct Meme& meme, const std::string& request) {
 }
 
 MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* config)
-  : RequestHandler(), location_(path), database_(SQL_DATABASE_PATH) {
+  : RequestHandler(), location_(path) {
   Logger *log = Logger::GetLogger();
 
   log->LogDebug("MemeRequestHandler :: MemeRequestHandler: in constructor");
@@ -133,14 +134,13 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
     return;
   }
 
-  init_meme_database(database_);
-
   memes_created_root_ = memes_created_stmt->tokens_[1];
   images_root_ = images_stmt->tokens_[1];
   html_root_ = html_stmt->tokens_[1];
   bad_ = false;
   log->LogInfo("MemeRequestHandler :: MemeRequestHandler: location_ = " + path + ", created_memes_root = " + memes_created_root_ 
                 + ", images_root = " + images_root_ + ", html_root = " + html_root_);
+  database_ = memes_created_root_ + SQL_DATABASE_FILE;
 
   // Store all image_root_ images into a map with coresponding id number.
   int id = 0;
@@ -153,6 +153,8 @@ MemeRequestHandler::MemeRequestHandler(const std::string& path, NginxConfig* con
     }
   }
   log->LogInfo("MemeRequestHandler :: MemeRequestHandler: total images loaded into image_map_: " + std::to_string(image_map_.size()));
+
+  init_meme_database(database_);
 }
 
 int MemeRequestHandler::handle_form_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
@@ -160,7 +162,7 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
 
   log->LogInfo("MemeRequestHandler :: handle_form_request: responding to request for a html meme form");
   
-  std::string file_path = html_root_ + "/form.html";
+  std::string file_path = html_root_ + HTML_FORM_FILE;
   std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
 
   log->LogInfo("MemeRequestHandler :: handle_form_request: File path used is " + file_path + "\n");
