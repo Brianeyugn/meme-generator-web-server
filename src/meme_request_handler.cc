@@ -177,36 +177,35 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
   std::ifstream istream(file_path, std::ios::in | std::ios::binary);
 
   if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
+    log->LogError("MemeRequestHandler :: handle_form_request: file path " + file_path + " is not a regular file");
     return handle_not_found(res);
-  } else {
-    std::string body((std::istreambuf_iterator<char>(istream)),
-                     (std::istreambuf_iterator<char>()));
-
-    // Insert image options into html form
-    std::string sel_target = "<option>Select a template image...</option>\n";
-    size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
-    for (int i=0; i<image_map_.size(); i++) {
-      std::string insert_str = "          <option value=" + std::to_string(i) + ">" + image_map_[i] + "</option>\n";
-      body.insert(pos, insert_str);
-      pos += insert_str.length();
-    }
-    log->LogInfo("MemeRequestHandler :: handle_form_request: HTML form body is:\n" + body);
-
-    int content_length = body.length();
-    Mime mime;
-    std::string content_type = mime.getContentType(file_ext);
-
-    res.set(http::field::content_type, content_type);
-    res.set(http::field::content_length, std::to_string(content_length));
-
-    res.reason("OK");
-    res.result(HTTP_STATUS_OK);
-    res.body() = body;
-
-    return HTTP_STATUS_OK;
   }
 
-  return handle_bad_request(res);
+  std::string body((std::istreambuf_iterator<char>(istream)),
+                   (std::istreambuf_iterator<char>()));
+
+  // Insert image options into html form
+  std::string sel_target = "<option>Select a template image...</option>\n";
+  size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
+  for (int i=0; i<image_map_.size(); i++) {
+    std::string insert_str = "          <option value=" + std::to_string(i) + ">" + image_map_[i] + "</option>\n";
+    body.insert(pos, insert_str);
+    pos += insert_str.length();
+  }
+  log->LogInfo("MemeRequestHandler :: handle_form_request: HTML form body is:\n" + body);
+
+  int content_length = body.length();
+  Mime mime;
+  std::string content_type = mime.getContentType(file_ext);
+
+  res.set(http::field::content_type, content_type);
+  res.set(http::field::content_length, std::to_string(content_length));
+
+  res.reason("OK");
+  res.result(HTTP_STATUS_OK);
+  res.body() = body;
+
+  return HTTP_STATUS_OK;
 }
 
 int MemeRequestHandler::handle_create(http::request<http::string_body> req, http::response<http::string_body>& res) {

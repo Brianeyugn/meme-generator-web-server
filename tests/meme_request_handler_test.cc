@@ -167,6 +167,28 @@ TEST_F(MemeRequestHandlerTest, BadConfigNoHTMLRootGets400ErrorResponse) {
   EXPECT_EQ(responseToString(res), expectedRes);
 }
 
+TEST_F(MemeRequestHandlerTest, BadConfigEmptyHandlerGets400ErrorResponse) {
+  bool success = config_parser.Parse("test_configs/meme_no_roots", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+  std::string method = "GET"; 
+  std::string requestURI = "/meme";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+  std::string expectedRes = makeResponseStringWithSpecifiedFields(
+    httpVersion, "400 Bad Request", headers, "");
+  EXPECT_EQ(responseToString(res), expectedRes);
+}
+
 TEST_F(MemeRequestHandlerTest, HandleFormRequest) {
   bool success = config_parser.Parse("test_configs/meme_good", &config);
   config.populateHandlerMap(handler_map);
@@ -182,7 +204,7 @@ TEST_F(MemeRequestHandlerTest, HandleFormRequest) {
   http::response<http::string_body>res;
   handler.handle_request(req,res);
   EXPECT_EQ(res.version(), 11);
-  EXPECT_EQ(res.result_int(), 200);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_OK);
 }
 
 TEST_F(MemeRequestHandlerTest, HandleCreate) {
@@ -202,5 +224,89 @@ TEST_F(MemeRequestHandlerTest, HandleCreate) {
   http::response<http::string_body>res;
   handler.handle_request(req,res);
   EXPECT_EQ(res.version(), 11);
-  EXPECT_EQ(res.result_int(), 200);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_OK);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleCreateEmptyBody) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "\\";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleCreateBadBody) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleRequestNoMethod) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+  std::string method = "";
+  std::string requestURI = "/meme/create";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleRequestBadURI) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+  std::string method = "POST";
+  std::string requestURI = "/bad/uri";
+  std::string httpVersion = "HTTP/1.1";
+  std::vector<std::string> headers = {};
+  std::string body = "";
+  std::string reqStr = makeRequestStringWithSpecifiedFields(
+    method, requestURI, httpVersion, headers, body);
+  
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_NOT_FOUND);
 }

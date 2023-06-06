@@ -38,6 +38,7 @@ TEST_F(ServerTest, StartAcceptWithHandlersSuccess) {
   handler_map["ErrorHandler"] = std::make_pair("ErrorHandler", config);
   handler_map["ApiHandler"] = std::make_pair("ApiHandler", config);
   handler_map["HealthHandler"] = std::make_pair("HealthHandler", config);
+  handler_map["MemeHandler"] = std::make_pair("MemeHandler", config);
   handler_map["NonexistentHandler"] = std::make_pair("NonexistentHandler", config);
 
   Server s(io_service, port, handler_map);
