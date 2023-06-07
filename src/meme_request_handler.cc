@@ -16,6 +16,7 @@
 
 #define HTML_FORM_FILE "/form.html"
 #define SQL_DATABASE_FILE "/meme.db"
+#define HTML_CREATE_FILE "/create.html"
 
 // Mutex for accessing meme.db on separate threads
 std::shared_mutex meme_lock;
@@ -170,6 +171,7 @@ int MemeRequestHandler::handle_form_request(http::request<http::string_body> req
 
   log->LogInfo("MemeRequestHandler :: handle_form_request: responding to request for a html meme form");
   
+  //Set body with form html
   std::string file_path = html_root_ + HTML_FORM_FILE;
   std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
 
@@ -301,9 +303,29 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
   log->LogDebug("MemeRequestHandler :: handle_create: unlocking thread");
   u_lock.unlock();
 
-  // Return HTTP response
-  std::string body = "Created meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
+  // Set body with html create form
+  std::string file_path = html_root_ + HTML_CREATE_FILE;
+  std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
 
+  log->LogInfo("MemeRequestHandler :: handle_create: File path used is " + file_path + "\n");
+  std::ifstream istream(file_path, std::ios::in | std::ios::binary);
+
+  if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
+    log->LogError("MemeRequestHandler :: handle_create: file path " + file_path + " is not a regular file");
+    return handle_not_found(res);
+  }
+
+  std::string body((std::istreambuf_iterator<char>(istream)),
+                   (std::istreambuf_iterator<char>()));
+
+  // Insert created meme ref into create html
+  std::string sel_target = "<div class=\"created-meme\">\n";
+  size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
+  std::string insert_str = "        Created meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
+  body.insert(pos, insert_str);
+  log->LogInfo("MemeRequestHandler :: handle_create: HTML create body is:\n" + body);
+
+  // Return HTTP response
   int content_length = body.length();
   const std::string content_type = "text/html";
 

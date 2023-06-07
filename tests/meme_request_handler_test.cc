@@ -219,8 +219,6 @@ TEST_F(MemeRequestHandlerTest, HandleCreate) {
   http::request<http::string_body>req;
   makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
 
-  std::cout << "hellO" << std::endl;
-
   http::response<http::string_body>res;
   handler.handle_request(req,res);
   EXPECT_EQ(res.version(), 11);
