@@ -6,6 +6,11 @@ FROM goofy-googlers-server:base as builder
 COPY . /usr/src/project
 WORKDIR /usr/src/project/build
 
+# Install SQLite3
+RUN (cd /
+    && curl https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz --output sqlite-autoconf-3420000.tar.gz
+    && tar xvfz sqlite-autoconf-3420000.tar.gz)
+
 # Build and test
 RUN cmake ..
 RUN make
@@ -30,13 +35,12 @@ COPY --from=builder /usr/src/project/memes_dir ./memes_dir
 # Copy tests into deployment image (including meme images for test_memes_dir)
 COPY --from=builder /usr/src/project/tests ./tests
 
-# Install SQLite3
-RUN (cd / \
-    && curl https://www.sqlite.org/2023/sqlite-autoconf-3420000.tar.gz --output sqlite-autoconf-3420000.tar.gz \
-    && tar xvfz sqlite-autoconf-3420000.tar.gz \
-    && cd sqlite-autoconf-3420000 \
-    && ./configure --prefix=/usr/local \
-    && make \
+# Copy SQLite3 installation files from builder and install in deployment image
+COPY --from=builder /sqlite-autoconf-3420000 ./sqlite-autoconf-3420000
+
+RUN (cd sqlite-autoconf-3420000
+    && ./configure --prefix=/usr/local
+    && make
     && make install)
 
 EXPOSE 80
