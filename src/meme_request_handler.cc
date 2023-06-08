@@ -347,18 +347,27 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
     return handle_bad_request(res);
   }
 
-  // TODO: Extract the desired id from the request
-  int meme_id = 0;
+  // Extract the desired id from the request
+  int meme_id;
+  try
+  {
+      meme_id = boost::lexical_cast<int>(req.body());
+  }
+  catch(const boost::bad_lexical_cast&)
+  {
+      log->LogInfo("MemeRequestHandler :: handle_retrieve: request's id is not an int");
+      return handle_bad_request(res);
+  }
 
-  // TODO: Retrieve meme via SQL
+  // Retrieve meme via SQL
   Meme meme;
   sqlite3 *db;
   sqlite3_stmt *statement;
 
-  const auto retrieve_query = "SELECT (image, top, bottom) FROM meme_table "
+  const auto retrieve_query = "SELECT image, top, bottom FROM meme_table "
                               "WHERE id = \"" + std::to_string(meme_id) + "\"";
 
-  // TODO: Figure out how the locking works and if it's necessary for this
+  // Use shared lock for reading
   log->LogDebug("MemeRequestHandler :: handle_retrieve: locking thread for reading");
   std::shared_lock<std::shared_mutex> s_lock(meme_lock);
   int rc = sqlite3_open(database_.c_str(), &db);
@@ -368,11 +377,30 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
     return handle_internal_server_error(res);
   }
 
-  char *error_message;
+  sqlite3_prepare_v2(db, retrieve_query.c_str(), -1, &statement, NULL);
+
   log->LogDebug("MemeRequestHandler :: handle_retrieve: executing SQL query: " + retrieve_query);
-  rc = sqlite3_exec(db, retrieve_query.c_str(), 0, 0, &error_message);
-  if (rc != SQLITE_OK && rc != SQLITE_CONSTRAINT) {
-    log->LogError("MemeRequestHandler :: handle_retrieve: could not execute SQL query (errno " + std::to_string(rc) + "): " + std::string(error_message));
+  rc = sqlite3_step(statement);
+  if (rc == SQLITE_DONE)
+  {
+    log->LogError("MemeRequestHandler :: handle_retrieve: could not find meme with ID: " + std::to_string(meme_id));
+    sqlite3_close(db);
+    return handle_bad_request(res);
+  } else if (rc != SQLITE_ROW) {
+    log->LogError("MemeRequestHandler :: handle_retrieve: could not evaluate SQL query (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  // Extract string from SQL retrieval
+  int image = sqlite3_column_int(statement, 0);
+  const char *top_text = reinterpret_cast<const char*>(sqlite3_column_text(statement, 1));
+  const char *bottom_text = reinterpret_cast<const char*>(sqlite3_column_text(statement, 2));
+  log->LogDebug("MemeRequestHandler :: handle_retrieve: returned from SQL:\n" + std::to_string(image) + "\n" + top_text + "\n" + bottom_text);
+
+  rc = sqlite3_finalize(statement);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: handle_retrieve: could not get meme from SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
     sqlite3_close(db);
     return handle_internal_server_error(res);
   }
@@ -382,7 +410,7 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
   s_lock.unlock();
 
   // TODO: Return HTTP response with two texts and image
-  std::string body = "Created meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
+  std::string body = "Retrieved meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
 
   int content_length = body.length();
   const std::string content_type = "text/html";
@@ -419,10 +447,10 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
     ret_code = handle_form_request(req, res);
   } else if (request_uri == "/meme/create") {
     ret_code = handle_create(req, res);
-  } else if (request_uri == "memes/view") {
+  } else if (request_uri == "/meme/view") {
     // Handle viewing of created memes
     ret_code = handle_retrieve(req, res);
-  } else if (request_uri == "memes/list") {
+  } else if (request_uri == "/meme/list") {
     // Handle listing of created memes
     ret_code = 0;
   } else {
