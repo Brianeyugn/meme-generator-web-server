@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include <string>
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <sqlite3.h>
@@ -17,6 +18,7 @@
 #define HTML_FORM_FILE "/form.html"
 #define SQL_DATABASE_FILE "/meme.db"
 #define HTML_CREATE_FILE "/create.html"
+#define MEME_IMAGE_URL "http://35.197.37.173/memes/memes_images/"
 
 // Mutex for accessing meme.db on separate threads
 std::shared_mutex meme_lock;
@@ -342,21 +344,25 @@ int MemeRequestHandler::handle_create(http::request<http::string_body> req, http
 int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
 
-  if (req.body() == "") {
+  std::string request_uri(req.target().begin(), req.target().end());
+  size_t found = request_uri.find("?id=");
+  if (req.body() == "" && found == std::string::npos) {
     log->LogError("MemeRequestHandler :: handle_retrieve: request was sent with an empty body");
     return handle_bad_request(res);
   }
 
   // Extract the desired id from the request
   int meme_id;
-  try
-  {
+  try {
+    if (found == std::string::npos) {
       meme_id = boost::lexical_cast<int>(req.body());
-  }
-  catch(const boost::bad_lexical_cast&)
-  {
-      log->LogInfo("MemeRequestHandler :: handle_retrieve: request's id is not an int");
-      return handle_bad_request(res);
+    } else {
+      log->LogDebug("Substring: " + request_uri.substr(14));
+      meme_id = boost::lexical_cast<int>(request_uri.substr(14));
+    }
+  } catch(const boost::bad_lexical_cast&) {
+    log->LogInfo("MemeRequestHandler :: handle_retrieve: request's id is not an int");
+    return handle_bad_request(res);
   }
 
   // Retrieve meme via SQL
@@ -394,8 +400,8 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
 
   // Extract string from SQL retrieval
   int image = sqlite3_column_int(statement, 0);
-  const char *top_text = reinterpret_cast<const char*>(sqlite3_column_text(statement, 1));
-  const char *bottom_text = reinterpret_cast<const char*>(sqlite3_column_text(statement, 2));
+  std::string top_text = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement, 1)));
+  std::string bottom_text = std::string(reinterpret_cast<const char*>(sqlite3_column_text(statement, 2)));
   log->LogDebug("MemeRequestHandler :: handle_retrieve: returned from SQL:\n" + std::to_string(image) + "\n" + top_text + "\n" + bottom_text);
 
   rc = sqlite3_finalize(statement);
@@ -409,8 +415,13 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
   log->LogDebug("MemeRequestHandler :: handle_retrieve: unlocking thread");
   s_lock.unlock();
 
-  // TODO: Return HTTP response with two texts and image
-  std::string body = "Retrieved meme! <a href=\"/meme/view?id=" + std::to_string(meme_id) + "\">" + std::to_string(meme_id) + "</a>";
+  // Return HTTP response with two texts and image
+  std::string image_url = MEME_IMAGE_URL + image_map_[image];
+  log->LogDebug("MemeRequestHandler :: handle_retrieve: Image URL: " + image_url);
+
+  std::string body = "<a>" + top_text + "</a>\n";
+  body += "<img src=\"" + image_url + "\" />\n";
+  body += "<a>" + bottom_text + "</a>\n";
 
   int content_length = body.length();
   const std::string content_type = "text/html";
@@ -447,7 +458,7 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
     ret_code = handle_form_request(req, res);
   } else if (request_uri == "/meme/create") {
     ret_code = handle_create(req, res);
-  } else if (request_uri == "/meme/view") {
+  } else if (boost::starts_with(request_uri, "/meme/view")) {
     // Handle viewing of created memes
     ret_code = handle_retrieve(req, res);
   } else if (request_uri == "/meme/list") {
