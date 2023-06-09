@@ -365,6 +365,12 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
     return handle_bad_request(res);
   }
 
+  // Bad request if id is greater than the number of memes
+  if (get_meme_count(res) == 0 || meme_id > get_meme_count(res)) {
+    log->LogInfo("MemeRequestHandler :: handle_retrieve: desired meme id is greater than the number of memes created");
+    return handle_bad_request(res);
+  }
+
   // Retrieve meme via SQL
   Meme meme;
   sqlite3 *db;
@@ -483,4 +489,56 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
   }
 
   return ret_code;
+}
+
+int MemeRequestHandler::get_meme_count(http::response<http::string_body>& res) {
+  Logger* log = Logger::GetLogger();
+  sqlite3 *db;
+  sqlite3_stmt *statement;
+
+  // Get meme ID number
+  int meme_id = 0;
+  const std::string count_query = "SELECT COUNT(*) FROM meme_table";
+
+  // Use shared lock for reading
+  log->LogDebug("MemeRequestHandler :: get_meme_count: locking thread for reading");
+  std::shared_lock<std::shared_mutex> s_lock(meme_lock);
+  int rc = sqlite3_open(database_.c_str(), &db);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: get_meme_count: could not open SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  sqlite3_prepare_v2(db, count_query.c_str(), -1, &statement, NULL);
+
+  log->LogDebug("MemeRequestHandler :: get_meme_count: executing SQL query: " + count_query);
+  rc = sqlite3_step(statement);
+  if (rc == SQLITE_DONE)
+  {
+    log->LogError("MemeRequestHandler :: get_meme_count: could not find count of memes");
+    sqlite3_close(db);
+    return handle_bad_request(res);
+  } else if (rc != SQLITE_ROW) {
+    log->LogError("MemeRequestHandler :: get_meme_count: could not evaluate SQL query (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  // Extract string from SQL retrieval
+  int meme_count = sqlite3_column_int(statement, 0);
+  log->LogDebug("MemeRequestHandler :: get_meme_count: returned from SQL:\n" + std::to_string(meme_count));
+
+  rc = sqlite3_finalize(statement);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: get_meme_count: could not finalize count of memes (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: get_meme_count: unlocking thread");
+  s_lock.unlock();
+
+  return meme_count;
 }

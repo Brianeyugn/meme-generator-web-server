@@ -17,6 +17,7 @@ class MemeRequestHandler : public RequestHandler {
   int handle_form_request(http::request<http::string_body> req, http::response<http::string_body>& res);
   int handle_create(http::request<http::string_body> req, http::response<http::string_body>& res);
   int handle_retrieve(http::request<http::string_body> req, http::response<http::string_body>& res);
+  int get_meme_count(http::response<http::string_body>& res);
 
   std::string location_; // Config-specified location
   std::string memes_created_root_; // Config-specified root

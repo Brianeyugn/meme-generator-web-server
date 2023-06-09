@@ -308,3 +308,123 @@ TEST_F(MemeRequestHandlerTest, HandleRequestBadURI) {
   EXPECT_EQ(res.version(), 11);
   EXPECT_EQ(res.result_int(), HTTP_STATUS_NOT_FOUND);
 }
+
+TEST_F(MemeRequestHandlerTest, HandleRetrieve) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+
+  // Create meme first
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::vector<std::string> headers = {};
+  std::string body = "top_text=gggg&bottom_text=hhhh&image=0";
+
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  // Retrieve created meme
+  method = "GET";
+  requestURI = "/meme/view?id=1";
+  headers = {};
+  body = "";
+
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_OK);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleRetrieveTooLargeID) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+
+  // Create meme first
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::vector<std::string> headers = {};
+  std::string body = "top_text=gggg&bottom_text=hhhh&image=0";
+
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  // Retrieve created meme
+  method = "GET";
+  requestURI = "/meme/view?id=2";
+  headers = {};
+  body = "";
+
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleRetrieveNoBody) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+
+  // Create meme first
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::vector<std::string> headers = {};
+  std::string body = "top_text=gggg&bottom_text=hhhh&image=0";
+
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  // Retrieve created meme
+  method = "GET";
+  requestURI = "/meme/view";
+  headers = {};
+  body = "";
+
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
+
+TEST_F(MemeRequestHandlerTest, HandleRetrieveNotInt) {
+  bool success = config_parser.Parse("test_configs/meme_good", &config);
+  config.populateHandlerMap(handler_map);
+  MemeRequestHandler handler("/meme", handler_map["/meme"].second);
+
+  // Create meme first
+  std::string method = "POST";
+  std::string requestURI = "/meme/create";
+  std::vector<std::string> headers = {};
+  std::string body = "top_text=gggg&bottom_text=hhhh&image=0";
+
+  http::request<http::string_body>req;
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  http::response<http::string_body>res;
+  handler.handle_request(req,res);
+
+  // Retrieve created meme
+  method = "GET";
+  requestURI = "/meme/view?id=wat";
+  headers = {};
+  body = "";
+
+  makeRequestWithSpecifiedFields(req,method,requestURI,headers,body);
+
+  handler.handle_request(req,res);
+  EXPECT_EQ(res.version(), 11);
+  EXPECT_EQ(res.result_int(), HTTP_STATUS_BAD_REQUEST);
+}
