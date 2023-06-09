@@ -419,9 +419,22 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
   std::string image_url = MEME_IMAGE_URL + image_map_[image];
   log->LogDebug("MemeRequestHandler :: handle_retrieve: Image URL: " + image_url);
 
-  std::string body = "<a>" + top_text + "</a>\n";
-  body += "<img src=\"" + image_url + "\" />\n";
-  body += "<a>" + bottom_text + "</a>\n";
+  std::string body = "<html>\n"
+                      "<head>\n"
+                      "<style>\n"
+                      "body { text-align: center; }\n"
+                      "img { position: relative; max-width: 100%; max-height: 100%; }\n"
+                      "h1 { position: absolute; left: 50%; transform: translateX(-50%); font-family: Impact, sans-serif; color: white; text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000; }\n"
+                      "#topText { top: 0%; }\n"
+                      "#bottomText { bottom: 0%; }\n"
+                      "</style>\n"
+                      "</head>\n"
+                      "<body>\n"
+                      "<img src=\"" + image_url + "\" />\n"
+                      "<h1 id=\"topText\">" + top_text + "</h1>\n"
+                      "<h1 id=\"bottomText\">" + bottom_text + "</h1>\n"
+                      "</body>\n"
+                      "</html>\n";
 
   int content_length = body.length();
   const std::string content_type = "text/html";
