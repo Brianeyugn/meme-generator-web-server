@@ -16,8 +16,10 @@
 #include "request_handler.h"
 
 #define HTML_FORM_FILE "/form.html"
-#define SQL_DATABASE_FILE "/meme.db"
 #define HTML_CREATE_FILE "/create.html"
+#define HTML_VIEW_FILE "/view.html"
+#define HTML_LIST_FILE "/list.html"
+#define SQL_DATABASE_FILE "/meme.db"
 #define MEME_IMAGE_URL "http://35.197.37.173/memes/memes_images/"
 
 // Mutex for accessing meme.db on separate threads
@@ -425,22 +427,29 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
   std::string image_url = MEME_IMAGE_URL + image_map_[image];
   log->LogDebug("MemeRequestHandler :: handle_retrieve: Image URL: " + image_url);
 
-  std::string body = "<html>\n"
-                      "<head>\n"
-                      "<style>\n"
-                      "body { text-align: center; }\n"
-                      "img { position: relative; max-width: 100%; max-height: 100%; }\n"
-                      "h1 { position: absolute; left: 50%; transform: translateX(-50%); font-family: Impact, sans-serif; color: white; text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000; }\n"
-                      "#topText { top: 0%; }\n"
-                      "#bottomText { bottom: 0%; }\n"
-                      "</style>\n"
-                      "</head>\n"
-                      "<body>\n"
-                      "<img src=\"" + image_url + "\" />\n"
-                      "<h1 id=\"topText\">" + top_text + "</h1>\n"
-                      "<h1 id=\"bottomText\">" + bottom_text + "</h1>\n"
-                      "</body>\n"
-                      "</html>\n";
+  //Set body with view html
+  std::string file_path = html_root_ + HTML_VIEW_FILE;
+  std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
+
+  log->LogInfo("MemeRequestHandler :: handle_retrieve: File path used is " + file_path + "\n");
+  std::ifstream istream(file_path, std::ios::in | std::ios::binary);
+
+  if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
+    log->LogError("MemeRequestHandler :: handle_retrieve: file path " + file_path + " is not a regular file");
+    return handle_not_found(res);
+  }
+
+  std::string body((std::istreambuf_iterator<char>(istream)),
+                   (std::istreambuf_iterator<char>()));
+
+  // Insert image options into html form
+  std::string sel_target = "<body>\n";
+  size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
+  std::string insert_str =  "<img src=\"" + image_url + "\" />\n"
+                            "<h1 id=\"topText\">" + top_text + "</h1>\n"
+                            "<h1 id=\"bottomText\">" + bottom_text + "</h1>\n";
+  body.insert(pos, insert_str);
+  log->LogInfo("MemeRequestHandler :: handle_retrieve: HTML body is:\n" + body);
 
   int content_length = body.length();
   const std::string content_type = "text/html";
@@ -498,23 +507,38 @@ int MemeRequestHandler::handle_list(http::request<http::string_body> req, http::
   log->LogDebug("MemeRequestHandler :: handle_list: unlocking thread");
   s_lock.unlock();
 
+  //Set body with list html
+  std::string file_path = html_root_ + HTML_LIST_FILE;
+  std::string file_ext = file_path.substr(file_path.find_last_of(".") + 1);
+
+  log->LogInfo("MemeRequestHandler :: handle_list: File path used is " + file_path + "\n");
+  std::ifstream istream(file_path, std::ios::in | std::ios::binary);
+
+  if (!boost::filesystem::is_regular_file(file_path) || !istream.good()) {
+    log->LogError("MemeRequestHandler :: handle_list file path " + file_path + " is not a regular file");
+    return handle_not_found(res);
+  }
+
+  std::string body((std::istreambuf_iterator<char>(istream)),
+                   (std::istreambuf_iterator<char>()));
+
+  // Insert image options into html form
+  std::string sel_target = "<body>\n";
+  size_t pos = body.find(sel_target) + sel_target.length(); // Position after target string
+  
   // Create a simple list of meme URLs using their IDs
-  std::string list_html = "<html>\n"
-                          "<head>\n"
-                          "<title>Meme List</title>\n"
-                          "</head>\n"
-                          "<body>\n"
-                          "<h1>Meme List</h1>\n"
+  std::string list_html = "<header><h1>Meme List</h1></header>\n"
                           "<ul>\n";
   for (const auto& meme_id : meme_ids) {
     std::string meme_url = "/meme/view?id=" + std::to_string(meme_id);
     list_html += "<li><a href=\"" + meme_url + "\">Meme " + std::to_string(meme_id) + "</a></li>\n";
   }
-  list_html += "</ul>\n"
-               "</body>\n"
-               "</html>\n";
+  list_html += "</ul>\n";
 
-  int content_length = list_html.length();
+  body.insert(pos, list_html);
+  log->LogInfo("MemeRequestHandler :: handle_list: HTML body is:\n" + body);
+
+  int content_length = body.length();
   const std::string content_type = "text/html";
 
   res.set(http::field::content_length, std::to_string(content_length));
@@ -522,7 +546,7 @@ int MemeRequestHandler::handle_list(http::request<http::string_body> req, http::
 
   res.reason("OK");
   res.result(HTTP_STATUS_OK);
-  res.body() = list_html;
+  res.body() = body;
 
   return HTTP_STATUS_OK;
 }
