@@ -455,6 +455,78 @@ int MemeRequestHandler::handle_retrieve(http::request<http::string_body> req, ht
   return HTTP_STATUS_OK;
 }
 
+int MemeRequestHandler::handle_list(http::request<http::string_body> req, http::response<http::string_body>& res) {
+  Logger* log = Logger::GetLogger();
+
+  // Retrieve all meme IDs from the database
+  std::vector<int> meme_ids;
+  sqlite3* db;
+  sqlite3_stmt* statement;
+
+  const std::string list_query = "SELECT id FROM meme_table";
+
+  // Use shared lock for reading
+  log->LogDebug("MemeRequestHandler :: handle_list: locking thread for reading");
+  std::shared_lock<std::shared_mutex> s_lock(meme_lock);
+  int rc = sqlite3_open(database_.c_str(), &db);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: handle_list: could not open SQL database (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  rc = sqlite3_prepare_v2(db, list_query.c_str(), -1, &statement, NULL);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: handle_list: could not prepare SQL query (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  while (sqlite3_step(statement) == SQLITE_ROW) {
+    int meme_id = sqlite3_column_int(statement, 0);
+    meme_ids.push_back(meme_id);
+  }
+
+  rc = sqlite3_finalize(statement);
+  if (rc != SQLITE_OK) {
+    log->LogError("MemeRequestHandler :: handle_list: could not finalize SQL statement (errno " + std::to_string(rc) + "): " + std::string(sqlite3_errmsg(db)));
+    sqlite3_close(db);
+    return handle_internal_server_error(res);
+  }
+
+  sqlite3_close(db);
+  log->LogDebug("MemeRequestHandler :: handle_list: unlocking thread");
+  s_lock.unlock();
+
+  // Create a simple list of meme URLs using their IDs
+  std::string list_html = "<html>\n"
+                          "<head>\n"
+                          "<title>Meme List</title>\n"
+                          "</head>\n"
+                          "<body>\n"
+                          "<h1>Meme List</h1>\n"
+                          "<ul>\n";
+  for (const auto& meme_id : meme_ids) {
+    std::string meme_url = "/meme/view?id=" + std::to_string(meme_id);
+    list_html += "<li><a href=\"" + meme_url + "\">Meme " + std::to_string(meme_id) + "</a></li>\n";
+  }
+  list_html += "</ul>\n"
+               "</body>\n"
+               "</html>\n";
+
+  int content_length = list_html.length();
+  const std::string content_type = "text/html";
+
+  res.set(http::field::content_length, std::to_string(content_length));
+  res.set(http::field::content_type, content_type);
+
+  res.reason("OK");
+  res.result(HTTP_STATUS_OK);
+  res.body() = list_html;
+
+  return HTTP_STATUS_OK;
+}
+
 int MemeRequestHandler::handle_request(http::request<http::string_body> req, http::response<http::string_body>& res) {
   Logger* log = Logger::GetLogger();
 
@@ -482,7 +554,7 @@ int MemeRequestHandler::handle_request(http::request<http::string_body> req, htt
     ret_code = handle_retrieve(req, res);
   } else if (request_uri == "/meme/list") {
     // Handle listing of created memes
-    ret_code = 0;
+    ret_code = handle_list(req, res);
   } else {
     log->LogInfo("MemeRequestHandler :: handle_request: encountered request for nonexisting directory");
     ret_code = handle_not_found(res);
